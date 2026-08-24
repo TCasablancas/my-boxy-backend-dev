@@ -5,8 +5,8 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "produtos")
-public class ProdutoModel {
+@Table(name = "produto")
+public class ProductModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -25,10 +25,10 @@ public class ProdutoModel {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loja_id", nullable = false)
-    private LojaModel loja;
+    private StoreModel loja;
 
     // Construtores, Getters e Setters
-    public ProdutoModel() {}
+    public ProductModel() {}
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
@@ -40,6 +40,6 @@ public class ProdutoModel {
     public void setPrice(BigDecimal price) { this.price = price; }
     public String getMainImage() { return mainImage; }
     public void setMainImage(String mainImage) { this.mainImage = mainImage; }
-    public LojaModel getLoja() { return loja; }
-    public void setLoja(LojaModel loja) { this.loja = loja; }
+    public StoreModel getLoja() { return loja; }
+    public void setLoja(StoreModel loja) { this.loja = loja; }
 }

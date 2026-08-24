@@ -3,7 +3,7 @@ package com.myboxydev.dev.controllers;
 import com.myboxydev.dev.dto.ProductCardDTO;
 import com.myboxydev.dev.dto.ProductDTO;
 import com.myboxydev.dev.dto.StoreSimpleDTO;
-import com.myboxydev.dev.repository.ProdutoRepository;
+import com.myboxydev.dev.repository.ProductRepository;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,11 +15,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/produtos")
+@RequestMapping("/api/produto")
 @CrossOrigin(origins = "*")
 public class ProductController {
     @Autowired
-    private ProdutoRepository productRepository;
+    private ProductRepository productRepository;
 
     // Home / Listagem Geral
     @GetMapping

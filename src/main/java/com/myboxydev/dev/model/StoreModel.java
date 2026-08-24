@@ -5,7 +5,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "lojas")
-public class LojaModel {
+public class StoreModel {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -19,7 +19,7 @@ public class LojaModel {
     @Column(nullable = false)
     private String image;
 
-    public LojaModel() {}
+    public StoreModel() {}
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
