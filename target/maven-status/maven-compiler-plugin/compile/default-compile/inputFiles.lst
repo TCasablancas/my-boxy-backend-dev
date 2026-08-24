@@ -1,0 +1,8 @@
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/DevApplication.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/ProductController.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/ProductCardDTO.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/ProductDTO.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/StoreSimpleDTO.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/model/LojaModel.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/model/ProdutoModel.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/repository/ProdutoRepository.java

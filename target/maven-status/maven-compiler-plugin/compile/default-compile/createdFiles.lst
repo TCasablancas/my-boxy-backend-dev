@@ -1,0 +1,8 @@
+com/myboxydev/dev/dto/ProductCardDTO.class
+com/myboxydev/dev/dto/ProductDTO.class
+com/myboxydev/dev/model/LojaModel.class
+com/myboxydev/dev/repository/ProdutoRepository.class
+com/myboxydev/dev/DevApplication.class
+com/myboxydev/dev/model/ProdutoModel.class
+com/myboxydev/dev/controllers/ProductController.class
+com/myboxydev/dev/dto/StoreSimpleDTO.class
