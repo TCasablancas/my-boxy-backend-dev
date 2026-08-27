@@ -5,10 +5,10 @@ services:
     runtime: docker
     repo: https://github.com/TCasablancas/my-boxy-backend-dev
     branch: main
-    envVars:
-      - key: SPRING_DATASOURCE_URL
-        value: jdbc:postgresql://db.uzgpndjyjfmwzteygbjb.supabase.co:5432/postgres
-      - key: SPRING_DATASOURCE_USERNAME
-        sync: false
-      - key: SUPABASE_DB_PASSWORD
-        sync: false
+    # envVars:
+    #   - key: SPRING_DATASOURCE_URL
+    #     value: jdbc:postgresql://db.uzgpndjyjfmwzteygbjb.supabase.co:5432/postgres
+    #   - key: SPRING_DATASOURCE_USERNAME
+    #     sync: false
+    #   - key: SUPABASE_DB_PASSWORD
+    #     sync: false
