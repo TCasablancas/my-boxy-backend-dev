@@ -8,5 +8,8 @@ public record ProductCardDTO(
     String name,
     BigDecimal price,
     String mainImage,
-    UUID lojaId
+    UUID storeId,
+    String storeName,
+    String storeImage,
+    BigDecimal storeRating
 ){}

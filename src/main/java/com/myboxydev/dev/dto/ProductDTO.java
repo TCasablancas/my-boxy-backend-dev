@@ -9,5 +9,6 @@ public record ProductDTO(
     String description,
     BigDecimal price,
     String mainImage,
-    StoreSimpleDTO loja
+    StoreSimpleDTO store,
+    SubcategoryDTO subcategory
 ) {}
