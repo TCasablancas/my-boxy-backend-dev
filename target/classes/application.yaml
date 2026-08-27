@@ -10,6 +10,7 @@ spring:
     username: ${SUPABASE_DB_USERNAME}
     password: ${SUPABASE_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    spring.jpa.database-platform: org.hibernate.dialect.PostgreSQLDialect
 
   jpa:
     hibernate:
@@ -18,7 +19,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-    spring.jpa.database-platform: org.hibernate.dialect.PostgreSQLDialect
 
 
 server:
