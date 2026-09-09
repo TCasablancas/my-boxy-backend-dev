@@ -7,9 +7,10 @@ public record UserProfileResponseDTO(
   String fullName,
   String alias,
   String email,
-  String cpfMasked, // Retorna mascarado: ***.456.789-**
+  String cpfMasked,
   String phoneNumber,
   String avatarUrl,
   Boolean isSeller,
+  String stripeCustomerId,
   SellerSummaryDTO sellerProfile
 ) {}
