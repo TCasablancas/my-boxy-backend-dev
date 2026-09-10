@@ -44,12 +44,18 @@ public class UserProfileEntity {
   @Column(name = "avatar_url", columnDefinition = "TEXT")
   private String avatarUrl;
 
+  @Column(name = "has_cpf_registered", nullable = false)
+  private Boolean hasCpfRegistered;
+
   @Column(name = "is_seller", nullable = false)
   @Builder.Default
   private Boolean isSeller = false;
 
   @Column(name = "stripe_customer_id", length = 100)
   private String stripeCustomerId;
+
+  @Column(name = "has_store_registered", nullable = false)
+  private Boolean hasStoreRegistered;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 20)

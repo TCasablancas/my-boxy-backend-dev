@@ -26,5 +26,7 @@ public record UserProfileResponseDTO(
   String phoneNumber,
   String avatarUrl,
   Boolean isSeller,
-  Boolean hasStoreRegistered // Flag para validar se já possui loja cadastrada
+  Boolean hasStoreRegistered, // Flag para validar se já possui loja cadastrada
+  String stripeCustomerId,
+  SellerSummaryDTO sellerProfile
 ) {}

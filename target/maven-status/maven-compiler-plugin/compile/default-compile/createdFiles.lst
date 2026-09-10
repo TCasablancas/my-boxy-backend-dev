@@ -33,6 +33,7 @@ com/myboxydev/dev/dto/AddressResponseDTO.class
 com/myboxydev/dev/exception/AliasAlreadyExistsException.class
 com/myboxydev/dev/dto/ProductCardDTO.class
 com/myboxydev/dev/dto/StoreDTO.class
+com/myboxydev/dev/model/UserProfileModel.class
 com/myboxydev/dev/DevApplication.class
 com/myboxydev/dev/dto/AddressRequestDTO.class
 com/myboxydev/dev/repository/CategoryRepository.class

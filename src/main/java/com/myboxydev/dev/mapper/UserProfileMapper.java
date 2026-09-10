@@ -32,9 +32,11 @@ public class UserProfileMapper {
             entity.getAlias(),
             entity.getEmail(),
             maskedCpf,
+            entity.getHasCpfRegistered(),
             entity.getPhoneNumber(),
             entity.getAvatarUrl(),
             entity.getIsSeller(),
+            entity.getHasStoreRegistered(),
             entity.getStripeCustomerId(),
             sellerSummary
     );
