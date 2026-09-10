@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Repository
 public interface SellerProfileRepository extends JpaRepository<SellerProfileEntity, UUID> {
-  Optional<SellerProfileEntity> finByUserProfileId(UUID userId);
+  Optional<SellerProfileEntity> findByUserProfileId(UUID userId);
   Optional<SellerProfileEntity> findBySlug(String slug);
   boolean existsBySlugIgnoreCase(String slug);
 }

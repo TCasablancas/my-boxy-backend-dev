@@ -8,3 +8,16 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://example.test/auth/v1
+          jwk-set-uri: http://localhost:9999/.well-known/jwks.json
+
+app:
+  security:
+    pgcrypto-secret-key: test-pgcrypto-secret-key
+  cors:
+    allowed-origins: http://localhost:3000
