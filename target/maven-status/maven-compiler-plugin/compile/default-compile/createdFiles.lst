@@ -17,9 +17,11 @@ com/myboxydev/dev/controllers/CategoryController.class
 com/myboxydev/dev/domain/entity/UserAddressEntity$UserAddressEntityBuilder.class
 com/myboxydev/dev/dto/SubcategoryDTO.class
 com/myboxydev/dev/model/SubcategoryModel.class
+com/myboxydev/dev/dto/MenuItemDTO.class
 com/myboxydev/dev/dto/response/ApiErrorResponseDTO$FieldErrorDTO.class
 com/myboxydev/dev/domain/entity/UserProfileEntity$UserProfileEntityBuilder.class
 com/myboxydev/dev/dto/CategorySimpleDTO.class
+com/myboxydev/dev/model/MenuItemModel.class
 com/myboxydev/dev/repository/SubcategoryRepository.class
 com/myboxydev/dev/dto/SellerSummaryDTO.class
 com/myboxydev/dev/controllers/UserAddressController.class
@@ -36,6 +38,7 @@ com/myboxydev/dev/dto/StoreDTO.class
 com/myboxydev/dev/model/UserProfileModel.class
 com/myboxydev/dev/DevApplication.class
 com/myboxydev/dev/dto/AddressRequestDTO.class
+com/myboxydev/dev/controllers/MenuItemController.class
 com/myboxydev/dev/repository/CategoryRepository.class
 com/myboxydev/dev/controllers/UserController.class
 com/myboxydev/dev/repository/ProductRepository.class
@@ -47,6 +50,7 @@ com/myboxydev/dev/model/ProductModel.class
 com/myboxydev/dev/domain/entity/SellerProfileEntity.class
 com/myboxydev/dev/dto/CategoryDTO.class
 com/myboxydev/dev/repository/StoreRepository.class
+com/myboxydev/dev/repository/MenuItemRepository.class
 com/myboxydev/dev/controllers/StoreController.class
 com/myboxydev/dev/config/AppSecurityProperties.class
 com/myboxydev/dev/controllers/ProductController.class

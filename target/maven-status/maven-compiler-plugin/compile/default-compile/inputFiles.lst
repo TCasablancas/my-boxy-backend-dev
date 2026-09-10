@@ -2,6 +2,7 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/config/AppSecurityProperties.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/config/SecurityConfig.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/CategoryController.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/MenuItemController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/ProductController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/StoreController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/UserAddressController.java
@@ -16,6 +17,7 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/AliasCheckResponseDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/CategoryDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/CategorySimpleDTO.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/MenuItemDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/ProductCardDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/ProductDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/SellerSummaryDTO.java
@@ -34,11 +36,13 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/ResourceNotFoundException.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/mapper/UserProfileMapper.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/model/CategoryModel.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/model/MenuItemModel.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/model/ProductModel.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/model/StoreModel.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/model/SubcategoryModel.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/model/UserProfileModel.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/repository/CategoryRepository.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/repository/MenuItemRepository.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/repository/ProductRepository.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/repository/SellerProfileRepository.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/repository/StoreRepository.java

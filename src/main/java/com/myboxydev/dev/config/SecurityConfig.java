@@ -95,6 +95,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/subcategories/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/users/check-alias").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/menu/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
 
                     // Endpoints de infraestrutura e documentação
