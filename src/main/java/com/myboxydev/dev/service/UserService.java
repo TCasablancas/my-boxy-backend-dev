@@ -4,6 +4,7 @@ import com.myboxydev.dev.domain.entity.UserProfileEntity;
 import com.myboxydev.dev.dto.AliasCheckResponseDTO;
 import com.myboxydev.dev.dto.UpdateUserProfileRequestDTO;
 import com.myboxydev.dev.dto.UserProfileResponseDTO;
+import com.myboxydev.dev.config.AppSecurityProperties;
 import com.myboxydev.dev.exception.AliasAlreadyExistsException;
 import com.myboxydev.dev.exception.BusinessRuleException;
 import com.myboxydev.dev.exception.CpfAlreadyExistsException;
@@ -13,7 +14,6 @@ import com.myboxydev.dev.repository.UserProfileRepository;
 import com.myboxydev.dev.util.CpfUtils;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,16 +25,14 @@ import java.util.UUID;
 public class UserService {
   private final UserProfileRepository userProfileRepository;
   private final UserProfileMapper userProfileMapper;
-
-  @Value("${app.security.pgcrypto-secret-key}")
-  private String pgcryptoSecretKey;
+  private final AppSecurityProperties appSecurityProperties;
 
   @Transactional(readOnly = true)
   public UserProfileResponseDTO getUserProfile(UUID userId) {
     UserProfileEntity user = userProfileRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
-    String decryptedCpf = userProfileRepository.decryptCpfByUserId(userId, pgcryptoSecretKey);
+    String decryptedCpf = userProfileRepository.decryptCpfByUserId(userId, appSecurityProperties.pgcryptoSecretKey());
     return userProfileMapper.toResponseDTO(user, decryptedCpf);
   }
 
@@ -67,7 +65,7 @@ public class UserService {
     user.setAlias(sanitized);
     userProfileRepository.save(user);
 
-    String decryptedCpf = userProfileRepository.decryptCpfByUserId(userId, pgcryptoSecretKey);
+    String decryptedCpf = userProfileRepository.decryptCpfByUserId(userId, appSecurityProperties.pgcryptoSecretKey());
     return userProfileMapper.toResponseDTO(user, decryptedCpf);
   }
 
@@ -89,7 +87,7 @@ public class UserService {
     UserProfileEntity user = userProfileRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
-    userProfileRepository.updateCpfEncryptedAndHash(userId, cleanCpf, cpfHash, pgcryptoSecretKey);
+    userProfileRepository.updateCpfEncryptedAndHash(userId, cleanCpf, cpfHash, appSecurityProperties.pgcryptoSecretKey());
 
     user = userProfileRepository.findById(userId).get();
     return userProfileMapper.toResponseDTO(user, cleanCpf);
@@ -105,7 +103,7 @@ public class UserService {
     if (request.avatarUrl() != null) user.setAvatarUrl(request.avatarUrl());
 
     userProfileRepository.save(user);
-    String decryptedCpf = userProfileRepository.decryptCpfByUserId(userId, pgcryptoSecretKey);
+    String decryptedCpf = userProfileRepository.decryptCpfByUserId(userId, appSecurityProperties.pgcryptoSecretKey());
 
     return userProfileMapper.toResponseDTO(user, decryptedCpf);
   }

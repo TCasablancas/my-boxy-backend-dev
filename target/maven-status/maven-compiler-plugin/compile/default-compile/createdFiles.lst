@@ -47,6 +47,7 @@ com/myboxydev/dev/domain/entity/SellerProfileEntity.class
 com/myboxydev/dev/dto/CategoryDTO.class
 com/myboxydev/dev/repository/StoreRepository.class
 com/myboxydev/dev/controllers/StoreController.class
+com/myboxydev/dev/config/AppSecurityProperties.class
 com/myboxydev/dev/controllers/ProductController.class
 com/myboxydev/dev/model/StoreModel.class
 com/myboxydev/dev/domain/entity/UserAddressEntity.class
