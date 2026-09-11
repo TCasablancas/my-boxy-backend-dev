@@ -12,8 +12,10 @@ import java.util.UUID;
 @Repository
 public interface UserProfileRepository extends JpaRepository<UserProfileEntity, UUID> {
   boolean existsByAliasIgnoreCase(String alias);
+  boolean existsByEmailIgnoreCase(String email);
   boolean existsByCpfHash(String cpfHash);
   Optional<UserProfileEntity> findByAliasIgnoreCase(String alias);
+  Optional<UserProfileEntity> findByEmailIgnoreCase(String email);
   Optional<UserProfileEntity> findByCpfHash(String cpfHash);
   // Consulta nativa para descriptografar CPF no banco via pgcrypto
   @Query(

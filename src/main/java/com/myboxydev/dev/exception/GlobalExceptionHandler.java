@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -54,6 +55,23 @@ public class GlobalExceptionHandler {
       fieldErrors
     );
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+  }
+
+  @ExceptionHandler(ResponseStatusException.class)
+  public ResponseEntity<ApiErrorResponseDTO> handleResponseStatusException(
+          ResponseStatusException ex,
+          HttpServletRequest request
+  ) {
+    HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+    ApiErrorResponseDTO error = new ApiErrorResponseDTO(
+            status.value(),
+            status.getReasonPhrase(),
+            ex.getReason(),
+            request.getRequestURI(),
+            OffsetDateTime.now(),
+            null
+    );
+    return ResponseEntity.status(status).body(error);
   }
 
   @ExceptionHandler(Exception.class)
