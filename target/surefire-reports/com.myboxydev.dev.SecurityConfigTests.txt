@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: com.myboxydev.dev.SecurityConfigTests
 -------------------------------------------------------------------------------
-Tests run: 3, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 3.298 s <<< FAILURE! -- in com.myboxydev.dev.SecurityConfigTests
-com.myboxydev.dev.SecurityConfigTests.permitsConfiguredCorsOrigin -- Time elapsed: 0.281 s <<< FAILURE!
+Tests run: 3, Failures: 2, Errors: 0, Skipped: 0, Time elapsed: 0.517 s <<< FAILURE! -- in com.myboxydev.dev.SecurityConfigTests
+com.myboxydev.dev.SecurityConfigTests.permitsConfiguredCorsOrigin -- Time elapsed: 0.021 s <<< FAILURE!
 java.lang.AssertionError: Response header 'Access-Control-Allow-Origin' expected:<http://localhost:3000> but was:<*>
 	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:62)
 	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:129)
@@ -10,7 +10,7 @@ java.lang.AssertionError: Response header 'Access-Control-Allow-Origin' expected
 	at org.springframework.test.web.servlet.MockMvc$1.andExpect(MockMvc.java:212)
 	at com.myboxydev.dev.SecurityConfigTests.permitsConfiguredCorsOrigin(SecurityConfigTests.java:43)
 
-com.myboxydev.dev.SecurityConfigTests.rejectsPrivateEndpointWithoutBearerToken -- Time elapsed: 0.004 s <<< FAILURE!
+com.myboxydev.dev.SecurityConfigTests.rejectsPrivateEndpointWithoutBearerToken -- Time elapsed: 0.003 s <<< FAILURE!
 java.lang.AssertionError: Status expected:<401> but was:<403>
 	at org.springframework.test.util.AssertionErrors.fail(AssertionErrors.java:62)
 	at org.springframework.test.util.AssertionErrors.assertEquals(AssertionErrors.java:129)

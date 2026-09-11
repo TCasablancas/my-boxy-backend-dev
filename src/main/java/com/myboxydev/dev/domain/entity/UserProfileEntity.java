@@ -29,10 +29,10 @@ public class UserProfileEntity {
   @Column(name = "alias", nullable = false, unique = true, length = 50)
   private String alias;
 
-  @Column(name = "cpf_encrypted", nullable = false, columnDefinition = "TEXT")
+  @Column(name = "cpf_encrypted", columnDefinition = "TEXT")
   private String cpfEncrypted;
 
-  @Column(name = "cpf_hash", nullable = false, unique = true, length = 64)
+  @Column(name = "cpf_hash", unique = true, length = 64)
   private String cpfHash;
 
   @Column(name = "email", nullable = false, unique = true, length = 255)
@@ -45,7 +45,8 @@ public class UserProfileEntity {
   private String avatarUrl;
 
   @Column(name = "has_cpf_registered", nullable = false)
-  private Boolean hasCpfRegistered;
+  @Builder.Default
+  private Boolean hasCpfRegistered = false;
 
   @Column(name = "is_seller", nullable = false)
   @Builder.Default
@@ -55,7 +56,8 @@ public class UserProfileEntity {
   private String stripeCustomerId;
 
   @Column(name = "has_store_registered", nullable = false)
-  private Boolean hasStoreRegistered;
+  @Builder.Default
+  private Boolean hasStoreRegistered = false;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 20)
