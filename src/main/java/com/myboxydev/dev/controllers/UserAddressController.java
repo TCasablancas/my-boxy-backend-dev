@@ -43,4 +43,13 @@ public class UserAddressController {
     addressService.deleteAddress(userId, addressId);
     return ResponseEntity.noContent().build();
   }
+
+  @PutMapping("/{addressId}/set-primary")
+  public ResponseEntity<AddressResponseDTO> setPrimary(
+    @RequestHeader("X-User-Id") UUID userId,
+    @PathVariable UUID addressId
+  ) {
+    AddressResponseDTO updated = addressService.setPrimaryAddress(userId, addressId);
+    return ResponseEntity.ok(updated);
+  }
 }
