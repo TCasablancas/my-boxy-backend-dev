@@ -12,8 +12,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/checkout/express-guest")
 @CrossOrigin(origins = "*")
 public class GuestCheckoutController {
-  @Autowired
-  private GuestCheckoutService guestCheckoutService;
+  private final GuestCheckoutService guestCheckoutService;
+  public GuestCheckoutController(GuestCheckoutService guestCheckoutService) {
+    this.guestCheckoutService = guestCheckoutService;
+  }
+
   @PostMapping
   public ResponseEntity<CheckoutResponseDTO> processExpressGuestCheckout(
           @Valid @RequestBody ExpressGuestCheckoutRequestDTO request) {

@@ -10,12 +10,12 @@ public record ExpressGuestCheckoutRequestDTO(
         @NotBlank @Email String email,
         @NotBlank String fullName,
         @NotBlank String cpf,
-        @NotBlank String postalCode,
+        @NotBlank @Pattern(regexp = "^\\d{5}-?\\d{3}$") String postalCode,
         @NotBlank String street,
         @NotBlank String number,
         String complement,
         @NotBlank String neighborhood,
         @NotBlank String city,
-        @NotBlank String state,
-        @NotBlank String paymentMethod
+        @NotBlank @Size(min = 2, max = 2) String state,
+        @NotBlank @Pattern(regexp = "(?i)^(PIX|CARD)$") String paymentMethod
 ) {}
