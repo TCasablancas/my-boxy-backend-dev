@@ -72,6 +72,15 @@ server:
 
 # Bloco customizado da MyBoxy para segurança e pgcrypto (Evita o crash de binding no Railway)
 app:
+  integrations:
+    melhor-envio:
+      api-url: ${MELHOR_ENVIO_API_URL:https://melhorenvio.com.br/api/v2}
+      token: ${MELHOR_ENVIO_TOKEN:}
+      default-origin-postal-code: ${MELHOR_ENVIO_ORIGIN_POSTAL_CODE:01001000}
+    stripe:
+      secret-key: ${STRIPE_SECRET_KEY:}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
   security:
     pgcrypto-secret-key: ${PGCRYPTO_SECRET_KEY:myboxy_default_pgcrypto_secret_key_32bytes}
     pgcryptoSecretKey: ${PGCRYPTO_SECRET_KEY:myboxy_default_pgcrypto_secret_key_32bytes}

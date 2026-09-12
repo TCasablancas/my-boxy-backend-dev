@@ -14,6 +14,8 @@ public interface OrderRepository extends JpaRepository<OrderModel, UUID>, JpaSpe
 
   Optional<OrderModel> findByOrderNumber(String orderNumber);
 
+  Optional<OrderModel> findByStripePaymentIntentId(String stripePaymentIntentId);
+
   List<OrderModel> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
   List<OrderModel> findByGuestEmailOrderByCreatedAtDesc(String guestEmail);

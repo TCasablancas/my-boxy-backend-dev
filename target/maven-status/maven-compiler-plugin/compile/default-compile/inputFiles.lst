@@ -3,10 +3,10 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/config/SecurityConfig.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/AuthController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/CategoryController.java
-/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/CheckoutController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/GuestCheckoutController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/MenuItemController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/ProductController.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/ShippingController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/StoreController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/UserAddressController.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/controllers/UserController.java
@@ -33,6 +33,8 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/RegisterRequestDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/SellerSummaryDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/SetPasswordRequestDTO.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/ShippingCalculationRequestDTO.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/ShippingOptionDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/StoreDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/StoreSimpleDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/SubcategoryDTO.java
@@ -68,6 +70,7 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/service/AuthService.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/service/GuestCheckoutService.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/service/MelhorEnvioService.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/service/StripePaymentService.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/service/UserAddressService.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/service/UserService.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/specification/ProductSpecifications.java
