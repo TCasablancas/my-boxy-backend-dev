@@ -1,4 +1,5 @@
 com/myboxydev/dev/DevApplicationTests.class
+com/myboxydev/dev/EntityMappingTests.class
 com/myboxydev/dev/UserSignupControllerTests.class
 com/myboxydev/dev/UserSignupServiceTests.class
 com/myboxydev/dev/SecurityConfigTests.class
