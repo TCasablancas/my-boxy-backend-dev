@@ -5,7 +5,9 @@ import com.myboxydev.dev.domain.entity.UserProfileEntity;
 import com.myboxydev.dev.domain.enums.AddressType;
 import com.myboxydev.dev.dto.AddressRequestDTO;
 import com.myboxydev.dev.dto.AddressResponseDTO;
+import com.myboxydev.dev.dto.UserAddressDTO;
 import com.myboxydev.dev.exception.ResourceNotFoundException;
+import com.myboxydev.dev.model.UserAddressModel;
 import com.myboxydev.dev.repository.UserAddressRepository;
 import com.myboxydev.dev.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +42,7 @@ public class UserAddressService {
             .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
 
     if (Boolean.TRUE.equals(request.isPrimary())) {
-      addressRepository.clearPrimaryAddressForUser(userId);
+      addressRepository.clearPrimaryAddressesForUser(userId);
     }
 
     Point locationPoint = null;
@@ -69,6 +71,17 @@ public class UserAddressService {
   }
 
   @Transactional
+  public AddressResponseDTO setPrimaryAddress(UUID userId, UUID addressId) {
+    addressRepository.clearPrimaryAddressesForUser(userId);
+    UserAddressEntity address = addressRepository.findByIdAndUserProfileId(addressId, userId)
+            .orElseThrow(() -> new RuntimeException("Endereço não encontrado."));
+    address.setIsPrimary(true);
+    UserAddressEntity updated = addressRepository.save(address);
+    return toResponseDTO(updated);
+  }
+
+
+  @Transactional
   public void deleteAddress(UUID userId, UUID addressId) {
     UserAddressEntity address = addressRepository.findByIdAndUserProfileId(addressId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Endereço não encontrado ou não pertence a este usuário"));
@@ -95,4 +108,20 @@ public class UserAddressService {
             lng
     );
   }
+
+//  private UserAddressDTO toDTO(UserAddressModel model) {
+//    return new UserAddressDTO(
+//            model.getId(),
+//            model.getLabel(),
+//            model.getStreet(),
+//            model.getNumber(),
+//            model.getComplement(),
+//            model.getNeighborhood(),
+//            model.getCity(),
+//            model.getState(),
+//            model.getPostalCode(),
+//            model.getIsPrimary(),
+//            model.getAddressType()
+//    );
+//  }
 }

@@ -16,9 +16,11 @@ com/myboxydev/dev/dto/ShippingCalculationRequestDTO.class
 com/myboxydev/dev/service/MelhorEnvioService$Company.class
 com/myboxydev/dev/dto/GuestCheckoutRequestDTO.class
 com/myboxydev/dev/exception/CpfAlreadyExistsException.class
+com/myboxydev/dev/dto/UserSignupRequestDTO$UserSignupAddressRequestDTO.class
 com/myboxydev/dev/repository/OrderRepository.class
 com/myboxydev/dev/config/SecurityConfig.class
 com/myboxydev/dev/dto/AliasCheckResponseDTO.class
+com/myboxydev/dev/service/SupabaseAuthClient.class
 com/myboxydev/dev/specification/ProductSpecifications.class
 com/myboxydev/dev/dto/SetPasswordRequestDTO.class
 com/myboxydev/dev/dto/UpdateUserProfileRequestDTO.class
@@ -36,6 +38,7 @@ com/myboxydev/dev/domain/entity/UserProfileEntity$UserProfileEntityBuilder.class
 com/myboxydev/dev/service/AuthService.class
 com/myboxydev/dev/dto/CategorySimpleDTO.class
 com/myboxydev/dev/model/MenuItemModel.class
+com/myboxydev/dev/dto/UserSignupResponseDTO.class
 com/myboxydev/dev/controllers/ShippingController.class
 com/myboxydev/dev/dto/RegisterRequestDTO.class
 com/myboxydev/dev/repository/SubcategoryRepository.class
@@ -62,8 +65,10 @@ com/myboxydev/dev/dto/StoreDTO.class
 com/myboxydev/dev/model/UserProfileModel.class
 com/myboxydev/dev/DevApplication.class
 com/myboxydev/dev/dto/AddressRequestDTO.class
+com/myboxydev/dev/service/UserSignupService.class
 com/myboxydev/dev/controllers/MenuItemController.class
 com/myboxydev/dev/repository/CategoryRepository.class
+com/myboxydev/dev/dto/UserAddressDTO.class
 com/myboxydev/dev/dto/GuestOrderItemDTO.class
 com/myboxydev/dev/controllers/UserController.class
 com/myboxydev/dev/repository/ProductRepository.class
@@ -71,6 +76,7 @@ com/myboxydev/dev/controllers/AuthController.class
 com/myboxydev/dev/util/CpfUtils.class
 com/myboxydev/dev/dto/UpdateDocumentRequestDTO.class
 com/myboxydev/dev/exception/ResourceNotFoundException.class
+com/myboxydev/dev/model/UserAddressModel.class
 com/myboxydev/dev/repository/UserAddressRepository.class
 com/myboxydev/dev/model/ProductModel.class
 com/myboxydev/dev/domain/entity/SellerProfileEntity.class
@@ -79,6 +85,7 @@ com/myboxydev/dev/repository/StoreRepository.class
 com/myboxydev/dev/repository/MenuItemRepository.class
 com/myboxydev/dev/controllers/StoreController.class
 com/myboxydev/dev/config/AppSecurityProperties.class
+com/myboxydev/dev/dto/UserSignupRequestDTO.class
 com/myboxydev/dev/controllers/ProductController.class
 com/myboxydev/dev/model/StoreModel.class
 com/myboxydev/dev/domain/entity/UserAddressEntity.class

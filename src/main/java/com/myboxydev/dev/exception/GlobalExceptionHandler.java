@@ -1,5 +1,6 @@
 package com.myboxydev.dev.exception;
 
+import com.myboxydev.dev.dto.UserSignupRequestDTO;
 import com.myboxydev.dev.dto.response.ApiErrorResponseDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -42,8 +43,12 @@ public class GlobalExceptionHandler {
 
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ApiErrorResponseDTO> handleValidationErrors(MethodArgumentNotValidException ex, HttpServletRequest request) {
+    // O contrato de cadastro do app é snake_case; os erros de campo seguem o mesmo padrão
+    boolean snakeCase = ex.getTarget() instanceof UserSignupRequestDTO;
     List<ApiErrorResponseDTO.FieldErrorDTO> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
-            .map(err -> new ApiErrorResponseDTO.FieldErrorDTO(err.getField(), err.getDefaultMessage()))
+            .map(err -> new ApiErrorResponseDTO.FieldErrorDTO(
+                    snakeCase ? toSnakeCase(err.getField()) : err.getField(),
+                    err.getDefaultMessage()))
             .toList();
 
     ApiErrorResponseDTO error = new ApiErrorResponseDTO(
@@ -85,5 +90,9 @@ public class GlobalExceptionHandler {
       null
     );
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+  }
+
+  private String toSnakeCase(String field) {
+    return field.replaceAll("([a-z0-9])([A-Z])", "$1_$2").toLowerCase();
   }
 }

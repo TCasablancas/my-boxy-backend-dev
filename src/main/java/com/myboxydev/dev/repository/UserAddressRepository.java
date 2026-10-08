@@ -22,7 +22,7 @@ public interface UserAddressRepository extends JpaRepository<UserAddressEntity, 
   @Query(
     "UPDATE UserAddressEntity a SET a.isPrimary = false WHERE a.userProfile.id = :userId"
   )
-  void clearPrimaryAddressForUser(
+  void clearPrimaryAddressesForUser(
     @Param("userId") UUID userId
   );
 

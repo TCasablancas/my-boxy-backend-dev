@@ -54,7 +54,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      # Schema é gerenciado no Supabase; o BFF não deve alterar tabelas em produção
+      ddl-auto: ${JPA_DDL_AUTO:none}
     show-sql: true
     properties:
       hibernate:
