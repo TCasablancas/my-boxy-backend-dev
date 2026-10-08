@@ -1,6 +1,7 @@
 package com.myboxydev.dev.service;
 
 import com.myboxydev.dev.config.SupabaseProperties;
+import com.myboxydev.dev.exception.AuthRateLimitException;
 import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -114,7 +115,7 @@ public class SupabaseAuthClient {
       return new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail inválido.");
     }
     if (exception.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
-      return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Muitas tentativas. Tente novamente em instantes.");
+      return translateRateLimit(exception, body);
     }
     if (exception.getStatusCode().value() == HttpStatus.UNAUTHORIZED.value()
             || exception.getStatusCode().value() == HttpStatus.FORBIDDEN.value()) {
@@ -124,6 +125,30 @@ public class SupabaseAuthClient {
     }
     log.warn("Supabase /signup respondeu {}: {}", exception.getStatusCode(), body);
     return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Não foi possível criar a conta.");
+  }
+
+  /**
+   * O 429 do Supabase tem dois motivos comuns no cadastro: o limite de envio de
+   * e-mails de confirmação (baixo com o SMTP embutido) e o limite de requisições
+   * por IP, que conta o IP do BFF para todos os usuários. Loga qual foi.
+   */
+  private AuthRateLimitException translateRateLimit(RestClientResponseException exception, String body) {
+    String errorCode = body.contains(AuthRateLimitException.EMAIL_SEND) ? AuthRateLimitException.EMAIL_SEND
+            : body.contains(AuthRateLimitException.REQUEST) ? AuthRateLimitException.REQUEST
+            : "unknown";
+    Long retryAfter = parseRetryAfter(exception.getResponseHeaders());
+    log.warn("Supabase /signup respondeu 429 [{}] retry-after={}s: {}", errorCode, retryAfter, body);
+    return new AuthRateLimitException(errorCode, retryAfter);
+  }
+
+  private Long parseRetryAfter(HttpHeaders headers) {
+    String value = headers != null ? headers.getFirst(HttpHeaders.RETRY_AFTER) : null;
+    if (value == null) return null;
+    try {
+      return Long.parseLong(value.trim());
+    } catch (NumberFormatException exception) {
+      return null;
+    }
   }
 
   private ResponseStatusException invalidResponse() {

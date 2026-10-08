@@ -80,7 +80,8 @@ public class GlobalExceptionHandler {
             OffsetDateTime.now(),
             null
     );
-    return ResponseEntity.status(status).body(error);
+    // Repassa headers da exceção (ex.: Retry-After de um 429 do Supabase)
+    return ResponseEntity.status(status).headers(ex.getHeaders()).body(error);
   }
 
   @ExceptionHandler(HttpMessageNotReadableException.class)

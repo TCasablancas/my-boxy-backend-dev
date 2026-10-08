@@ -51,6 +51,7 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/UserSignupResponseDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/response/ApiErrorResponseDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/AliasAlreadyExistsException.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/AuthRateLimitException.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/BusinessRuleException.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/CpfAlreadyExistsException.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/EmailAlreadyInAuthException.java

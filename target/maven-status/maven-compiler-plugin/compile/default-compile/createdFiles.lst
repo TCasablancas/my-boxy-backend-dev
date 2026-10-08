@@ -88,6 +88,7 @@ com/myboxydev/dev/DevApplication.class
 com/myboxydev/dev/dto/AddressRequestDTO.class
 com/myboxydev/dev/controllers/MenuItemController.class
 com/myboxydev/dev/dto/UserAddressDTO.class
+com/myboxydev/dev/exception/AuthRateLimitException.class
 com/myboxydev/dev/dto/GuestOrderItemDTO.class
 com/myboxydev/dev/controllers/AuthController.class
 com/myboxydev/dev/repository/UserAddressRepository.class
