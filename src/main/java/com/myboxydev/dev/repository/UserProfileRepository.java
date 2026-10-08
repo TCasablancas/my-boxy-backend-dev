@@ -2,6 +2,7 @@ package com.myboxydev.dev.repository;
 
 import com.myboxydev.dev.domain.entity.UserProfileEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -27,6 +28,7 @@ public interface UserProfileRepository extends JpaRepository<UserProfileEntity, 
     @Param("secretKey") String secretKey
   );
   // Atualização atômica do CPF criptografado e do hash SHA-256
+  @Modifying(flushAutomatically = true, clearAutomatically = true)
   @Query(
     value = "UPDATE public.user_profiles SET cpf_encrypted = pgp_sym_encrypt(:rawCpf, :secretKey), cpf_hash = :cpfHash, updated_at = NOW() WHERE id = :userId",
     nativeQuery = true

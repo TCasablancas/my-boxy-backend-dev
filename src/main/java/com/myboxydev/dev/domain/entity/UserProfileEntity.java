@@ -44,10 +44,6 @@ public class UserProfileEntity {
   @Column(name = "avatar_url", columnDefinition = "TEXT")
   private String avatarUrl;
 
-  @Column(name = "has_cpf_registered", nullable = false)
-  @Builder.Default
-  private Boolean hasCpfRegistered = false;
-
   @Column(name = "is_seller", nullable = false)
   @Builder.Default
   private Boolean isSeller = false;
