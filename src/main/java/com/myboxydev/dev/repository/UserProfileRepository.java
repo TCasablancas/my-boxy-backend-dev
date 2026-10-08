@@ -18,6 +18,12 @@ public interface UserProfileRepository extends JpaRepository<UserProfileEntity, 
   Optional<UserProfileEntity> findByAliasIgnoreCase(String alias);
   Optional<UserProfileEntity> findByEmailIgnoreCase(String email);
   Optional<UserProfileEntity> findByCpfHash(String cpfHash);
+  // Id do usuário no Supabase Auth (schema auth) para diagnosticar contas órfãs no cadastro
+  @Query(
+    value = "SELECT id FROM auth.users WHERE lower(email) = lower(:email) LIMIT 1",
+    nativeQuery = true
+  )
+  UUID findAuthUserIdByEmail(@Param("email") String email);
   // Consulta nativa para descriptografar CPF no banco via pgcrypto
   @Query(
     value = "SELECT pgp_sym_decrypt(cpf_encrypted\\:\\:bytea, :secretKey) FROM public.user_profiles WHERE id = :userId",

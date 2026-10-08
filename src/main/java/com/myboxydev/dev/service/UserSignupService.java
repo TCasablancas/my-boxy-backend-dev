@@ -10,6 +10,7 @@ import com.myboxydev.dev.dto.UserSignupResponseDTO;
 import com.myboxydev.dev.exception.AliasAlreadyExistsException;
 import com.myboxydev.dev.exception.BusinessRuleException;
 import com.myboxydev.dev.exception.CpfAlreadyExistsException;
+import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
 import com.myboxydev.dev.repository.UserAddressRepository;
 import com.myboxydev.dev.repository.UserProfileRepository;
 import com.myboxydev.dev.util.CpfUtils;
@@ -59,6 +60,7 @@ public class UserSignupService {
 
     // Validações antecipadas evitam criar usuário no Auth para depois desfazer
     if (userProfileRepository.existsByEmailIgnoreCase(email)) {
+      log.warn("Cadastro recusado (409) [perfil existente] email={}", maskEmail(email));
       throw new BusinessRuleException("Já existe uma conta associada a este e-mail.");
     }
     if (userProfileRepository.existsByAliasIgnoreCase(alias)) {
@@ -68,11 +70,17 @@ public class UserSignupService {
       throw new CpfAlreadyExistsException();
     }
 
-    UUID userId = supabaseAuthClient.signUp(
-            email,
-            request.password(),
-            Map.of("full_name", fullName, "alias", alias)
-    );
+    UUID userId;
+    try {
+      userId = supabaseAuthClient.signUp(
+              email,
+              request.password(),
+              Map.of("full_name", fullName, "alias", alias)
+      );
+    } catch (EmailAlreadyInAuthException exception) {
+      logAuthConflict(email, exception.getReason());
+      throw exception;
+    }
 
     try {
       UserProfileEntity profile = transactionTemplate.execute(status ->
@@ -131,6 +139,32 @@ public class UserSignupService {
             .build());
 
     return profile;
+  }
+
+  /**
+   * O perfil já foi checado antes do Auth, então um e-mail recusado pelo Supabase
+   * sem linha em user_profiles indica conta órfã em auth.users (ex.: cadastro que
+   * falhou depois de criar o usuário). Loga o id para facilitar a limpeza.
+   */
+  private void logAuthConflict(String email, String reason) {
+    UUID orphanId = null;
+    try {
+      orphanId = userProfileRepository.findAuthUserIdByEmail(email);
+    } catch (RuntimeException lookupFailure) {
+      log.warn("Não foi possível consultar auth.users para {}", maskEmail(email), lookupFailure);
+    }
+    if (orphanId != null && !userProfileRepository.existsById(orphanId)) {
+      log.warn("Cadastro recusado (409) [{}] email={}: conta órfã em auth.users id={} sem perfil em user_profiles",
+              reason, maskEmail(email), orphanId);
+    } else {
+      log.warn("Cadastro recusado (409) [{}] email={} authUserId={}", reason, maskEmail(email), orphanId);
+    }
+  }
+
+  private String maskEmail(String email) {
+    int at = email.indexOf('@');
+    if (at <= 1) return "***" + email.substring(Math.max(at, 0));
+    return email.charAt(0) + "***" + email.substring(at);
   }
 
   private String normalizeAlias(String rawAlias) {

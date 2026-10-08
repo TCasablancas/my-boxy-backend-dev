@@ -1,5 +1,6 @@
 package com.myboxydev.dev.service;
 
+import com.myboxydev.dev.config.SupabaseProperties;
 import com.myboxydev.dev.dto.AuthResponseDTO;
 import com.myboxydev.dev.dto.LoginRequestDTO;
 import com.myboxydev.dev.dto.RegisterRequestDTO;
@@ -7,7 +8,6 @@ import com.myboxydev.dev.dto.SetPasswordRequestDTO;
 import com.myboxydev.dev.domain.entity.UserProfileEntity;
 import com.myboxydev.dev.exception.BusinessRuleException;
 import com.myboxydev.dev.repository.UserProfileRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -36,13 +36,12 @@ public class AuthService {
   public AuthService(
           UserProfileRepository userProfileRepository,
           RestTemplate restTemplate,
-          @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:https://uzgpndjyjfmwzteygbjb.supabase.co/auth/v1}") String supabaseAuthUrl,
-          @Value("${SUPABASE_ANON_KEY:}") String supabaseAnonKey
+          SupabaseProperties supabaseProperties
   ) {
     this.userProfileRepository = userProfileRepository;
     this.restTemplate = restTemplate;
-    this.supabaseAuthUrl = stripTrailingSlash(supabaseAuthUrl);
-    this.supabaseAnonKey = supabaseAnonKey;
+    this.supabaseAuthUrl = supabaseProperties.getAuthUrl();
+    this.supabaseAnonKey = supabaseProperties.getAnonKey();
   }
 
   /**
@@ -91,9 +90,6 @@ public class AuthService {
   }
 
   private AuthTokens authenticate(String path, String email, String password, String errorMessage) {
-    if (supabaseAnonKey.isBlank()) {
-      throw new IllegalStateException("SUPABASE_ANON_KEY não configurada.");
-    }
     try {
       ResponseEntity<Map> response = restTemplate.postForEntity(
               supabaseAuthUrl + path,
@@ -174,10 +170,6 @@ public class AuthService {
 
   private String normalizeEmail(String email) {
     return email.trim().toLowerCase(Locale.ROOT);
-  }
-
-  private String stripTrailingSlash(String url) {
-    return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
   }
 
   private record AuthTokens(String accessToken, String refreshToken, UUID userId) {}

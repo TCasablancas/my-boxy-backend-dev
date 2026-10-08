@@ -7,6 +7,7 @@ import com.myboxydev.dev.dto.UserSignupRequestDTO;
 import com.myboxydev.dev.dto.UserSignupResponseDTO;
 import com.myboxydev.dev.exception.BusinessRuleException;
 import com.myboxydev.dev.exception.CpfAlreadyExistsException;
+import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
 import com.myboxydev.dev.repository.UserAddressRepository;
 import com.myboxydev.dev.repository.UserProfileRepository;
 import com.myboxydev.dev.service.SupabaseAuthClient;
@@ -113,6 +114,30 @@ class UserSignupServiceTests {
     assertThatThrownBy(() -> service.signup(request("ana", VALID_CPF)))
             .isInstanceOf(BusinessRuleException.class);
     verify(supabaseAuthClient).deleteUser(USER_ID);
+  }
+
+  @Test
+  void looksUpOrphanAuthUserWhenSupabaseRejectsEmail() {
+    UUID orphanId = UUID.randomUUID();
+    when(supabaseAuthClient.signUp(anyString(), anyString(), anyMap()))
+            .thenThrow(new EmailAlreadyInAuthException(SupabaseAuthClient.REASON_EMAIL_EXISTS));
+    when(userProfileRepository.findAuthUserIdByEmail("ana@myboxy.com")).thenReturn(orphanId);
+
+    assertThatThrownBy(() -> service.signup(request("ana", VALID_CPF)))
+            .isInstanceOf(EmailAlreadyInAuthException.class)
+            .hasMessage("Já existe uma conta associada a este e-mail.");
+    verify(userProfileRepository).existsById(orphanId);
+    verify(supabaseAuthClient, never()).deleteUser(any());
+  }
+
+  @Test
+  void keepsConflictWhenOrphanLookupFails() {
+    when(supabaseAuthClient.signUp(anyString(), anyString(), anyMap()))
+            .thenThrow(new EmailAlreadyInAuthException(SupabaseAuthClient.REASON_EMPTY_IDENTITIES));
+    when(userProfileRepository.findAuthUserIdByEmail(anyString())).thenThrow(new RuntimeException("permission denied"));
+
+    assertThatThrownBy(() -> service.signup(request("ana", VALID_CPF)))
+            .isInstanceOf(EmailAlreadyInAuthException.class);
   }
 
   private UserSignupRequestDTO request(String alias, String cpf) {

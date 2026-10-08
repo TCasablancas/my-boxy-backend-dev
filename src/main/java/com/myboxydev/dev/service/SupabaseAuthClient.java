@@ -1,8 +1,9 @@
 package com.myboxydev.dev.service;
 
-import com.myboxydev.dev.exception.BusinessRuleException;
+import com.myboxydev.dev.config.SupabaseProperties;
+import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -26,40 +27,22 @@ import java.util.UUID;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class SupabaseAuthClient {
-  private final RestTemplate restTemplate;
-  private final String supabaseAuthUrl;
-  private final String supabaseAnonKey;
-  private final String supabaseServiceRoleKey;
-  private final String emailRedirectUrl;
+  public static final String REASON_EMAIL_EXISTS = "Auth: email_exists";
+  public static final String REASON_EMPTY_IDENTITIES = "Auth: identities vazio";
 
-  public SupabaseAuthClient(
-          RestTemplate restTemplate,
-          @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri:https://uzgpndjyjfmwzteygbjb.supabase.co/auth/v1}") String supabaseAuthUrl,
-          @Value("${SUPABASE_ANON_KEY:}") String supabaseAnonKey,
-          @Value("${SUPABASE_SERVICE_ROLE_KEY:}") String supabaseServiceRoleKey,
-          @Value("${SUPABASE_EMAIL_REDIRECT_URL:}") String emailRedirectUrl
-  ) {
-    this.restTemplate = restTemplate;
-    this.supabaseAuthUrl = supabaseAuthUrl.endsWith("/")
-            ? supabaseAuthUrl.substring(0, supabaseAuthUrl.length() - 1)
-            : supabaseAuthUrl;
-    this.supabaseAnonKey = supabaseAnonKey;
-    this.supabaseServiceRoleKey = supabaseServiceRoleKey;
-    this.emailRedirectUrl = emailRedirectUrl;
-  }
+  private final RestTemplate restTemplate;
+  private final SupabaseProperties supabaseProperties;
 
   /**
    * Cria o usuário no Supabase Auth via /signup, respeitando a configuração de
    * confirmação de e-mail do projeto. Retorna o id gerado em auth.users.
    */
   public UUID signUp(String email, String password, Map<String, Object> userMetadata) {
-    if (supabaseAnonKey.isBlank()) {
-      throw new IllegalStateException("SUPABASE_ANON_KEY não configurada.");
-    }
-
-    UriComponentsBuilder uri = UriComponentsBuilder.fromUriString(supabaseAuthUrl + "/signup");
-    if (!emailRedirectUrl.isBlank()) {
+    UriComponentsBuilder uri = UriComponentsBuilder.fromUriString(supabaseProperties.getAuthUrl() + "/signup");
+    String emailRedirectUrl = supabaseProperties.getEmailRedirectUrl();
+    if (emailRedirectUrl != null && !emailRedirectUrl.isBlank()) {
       uri.queryParam("redirect_to", emailRedirectUrl);
     }
 
@@ -71,13 +54,14 @@ public class SupabaseAuthClient {
     try {
       ResponseEntity<Map> response = restTemplate.postForEntity(
               uri.build().toUri(),
-              new HttpEntity<>(body, headers(supabaseAnonKey)),
+              new HttpEntity<>(body, headers(supabaseProperties.getAnonKey())),
               Map.class
       );
       return parseCreatedUserId(response.getBody());
     } catch (RestClientResponseException exception) {
       throw translateSignUpError(exception);
     } catch (RestClientException exception) {
+      log.error("Supabase /signup inacessível", exception);
       throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Serviço de autenticação indisponível.");
     }
   }
@@ -87,17 +71,14 @@ public class SupabaseAuthClient {
    * pode ser persistido, para não deixar conta órfã que bloqueia o e-mail.
    */
   public void deleteUser(UUID userId) {
-    if (supabaseServiceRoleKey.isBlank()) {
-      log.error("SUPABASE_SERVICE_ROLE_KEY não configurada; usuário {} ficou órfão em auth.users.", userId);
-      return;
-    }
     try {
       restTemplate.exchange(
-              supabaseAuthUrl + "/admin/users/" + userId,
+              supabaseProperties.getAuthUrl() + "/admin/users/" + userId,
               HttpMethod.DELETE,
-              new HttpEntity<>(headers(supabaseServiceRoleKey)),
+              new HttpEntity<>(headers(supabaseProperties.getServiceRoleKey())),
               Void.class
       );
+      log.info("Usuário {} removido do Supabase Auth (compensação do cadastro).", userId);
     } catch (RestClientException exception) {
       log.error("Falha ao remover usuário órfão {} do Supabase Auth.", userId, exception);
     }
@@ -112,7 +93,7 @@ public class SupabaseAuthClient {
 
     // E-mail já cadastrado com confirmação ligada: o GoTrue devolve um user falso sem identities
     if (user.get("identities") instanceof List<?> identities && identities.isEmpty()) {
-      throw new BusinessRuleException("Já existe uma conta associada a este e-mail.");
+      throw new EmailAlreadyInAuthException(REASON_EMPTY_IDENTITIES);
     }
     try {
       return UUID.fromString((String) user.get("id"));
@@ -124,7 +105,7 @@ public class SupabaseAuthClient {
   private RuntimeException translateSignUpError(RestClientResponseException exception) {
     String body = exception.getResponseBodyAsString();
     if (body.contains("user_already_exists") || body.contains("email_exists")) {
-      return new BusinessRuleException("Já existe uma conta associada a este e-mail.");
+      return new EmailAlreadyInAuthException(REASON_EMAIL_EXISTS);
     }
     if (body.contains("weak_password")) {
       return new ResponseStatusException(HttpStatus.BAD_REQUEST, "A senha não atende aos requisitos de segurança.");
@@ -134,6 +115,12 @@ public class SupabaseAuthClient {
     }
     if (exception.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
       return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "Muitas tentativas. Tente novamente em instantes.");
+    }
+    if (exception.getStatusCode().value() == HttpStatus.UNAUTHORIZED.value()
+            || exception.getStatusCode().value() == HttpStatus.FORBIDDEN.value()) {
+      // Chave inválida ou de outro projeto: problema de configuração do BFF, não do usuário
+      log.error("Supabase /signup recusou a SUPABASE_ANON_KEY ({}): {}", exception.getStatusCode(), body);
+      return new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Serviço de autenticação indisponível.");
     }
     log.warn("Supabase /signup respondeu {}: {}", exception.getStatusCode(), body);
     return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Não foi possível criar a conta.");
