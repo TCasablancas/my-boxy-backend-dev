@@ -15,8 +15,14 @@ SUPABASE_SERVICE_ROLE_KEY=<Supabase service role key, server-side only>
 SUPABASE_EMAIL_REDIRECT_URL=<optional deep link opened by the confirmation e-mail>
 ```
 
-`SUPABASE_SERVICE_ROLE_KEY` is used only to delete the Supabase Auth user when the
-profile cannot be persisted during signup. Never ship it to the app.
+`SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are validated at startup: the
+app does not boot without them. The service role key is used only to delete the
+Supabase Auth user when the profile cannot be persisted during signup. Never ship
+it to the app.
+
+Signup `409` responses are logged with their origin (`perfil existente`,
+`Auth: email_exists` or `Auth: identities vazio`). When Supabase rejects an e-mail
+that has no `user_profiles` row, the log line says `conta órfã em auth.users id=<uuid>`.
 
 `JPA_DDL_AUTO` defaults to `none`: the schema is owned by Supabase.
 

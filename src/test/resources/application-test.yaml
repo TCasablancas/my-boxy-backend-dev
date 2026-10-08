@@ -17,6 +17,10 @@ spring:
           jwk-set-uri: http://localhost:9999/.well-known/jwks.json
 
 app:
+  supabase:
+    auth-url: https://example.test/auth/v1
+    anon-key: test-anon-key
+    service-role-key: test-service-role-key
   security:
     pgcrypto-secret-key: test-pgcrypto-secret-key
   cors:
