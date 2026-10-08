@@ -1,5 +1,9 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/test/java/com/myboxydev/dev/DevApplicationTests.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/test/java/com/myboxydev/dev/EntityMappingTests.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/test/java/com/myboxydev/dev/SecurityConfigTests.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/test/java/com/myboxydev/dev/SignupAvailabilityControllerTests.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/test/java/com/myboxydev/dev/SignupAvailabilityServiceTests.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/test/java/com/myboxydev/dev/SupabaseAuthClientTests.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/test/java/com/myboxydev/dev/SupabasePropertiesTests.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/test/java/com/myboxydev/dev/UserSignupControllerTests.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/test/java/com/myboxydev/dev/UserSignupServiceTests.java

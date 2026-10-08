@@ -82,6 +82,11 @@ app:
       secret-key: ${STRIPE_SECRET_KEY:}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+  supabase:
+    auth-url: ${SUPABASE_JWT_ISSUER_URI:https://uzgpndjyjfmwzteygbjb.supabase.co/auth/v1}
+    anon-key: ${SUPABASE_ANON_KEY:}
+    service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
+    email-redirect-url: ${SUPABASE_EMAIL_REDIRECT_URL:}
   security:
     pgcrypto-secret-key: ${PGCRYPTO_SECRET_KEY:myboxy_default_pgcrypto_secret_key_32bytes}
     pgcryptoSecretKey: ${PGCRYPTO_SECRET_KEY:myboxy_default_pgcrypto_secret_key_32bytes}
