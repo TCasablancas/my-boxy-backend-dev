@@ -14,6 +14,7 @@ com/myboxydev/dev/dto/SetPasswordRequestDTO.class
 com/myboxydev/dev/dto/UpdateUserProfileRequestDTO.class
 com/myboxydev/dev/service/UserService.class
 com/myboxydev/dev/domain/entity/UserAddressEntity$UserAddressEntityBuilder.class
+com/myboxydev/dev/exception/AuthUnavailableException.class
 com/myboxydev/dev/model/SubcategoryModel.class
 com/myboxydev/dev/dto/MenuItemDTO.class
 com/myboxydev/dev/service/MelhorEnvioService$MelhorEnvioQuote.class
@@ -55,6 +56,7 @@ com/myboxydev/dev/model/StoreModel.class
 com/myboxydev/dev/domain/entity/UserAddressEntity.class
 com/myboxydev/dev/domain/enums/AddressType.class
 com/myboxydev/dev/repository/UserProfileRepository.class
+com/myboxydev/dev/exception/FieldConflictException.class
 com/myboxydev/dev/exception/GlobalExceptionHandler.class
 com/myboxydev/dev/dto/StoreSimpleDTO.class
 com/myboxydev/dev/model/CategoryModel.class
