@@ -6,7 +6,10 @@ import com.myboxydev.dev.dto.LoginRequestDTO;
 import com.myboxydev.dev.dto.RegisterRequestDTO;
 import com.myboxydev.dev.dto.SetPasswordRequestDTO;
 import com.myboxydev.dev.domain.entity.UserProfileEntity;
+import com.myboxydev.dev.exception.AuthRateLimitException;
 import com.myboxydev.dev.exception.BusinessRuleException;
+import com.myboxydev.dev.exception.EmailNotConfirmedException;
+import com.myboxydev.dev.exception.FieldConflictException;
 import com.myboxydev.dev.repository.UserProfileRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
@@ -28,6 +31,8 @@ import java.util.UUID;
 
 @Service
 public class AuthService {
+  static final String INCOMPLETE_SIGNUP =
+          "Seu cadastro não foi concluído. Faça o cadastro de novo com o mesmo e-mail e senha para terminar.";
   private final UserProfileRepository userProfileRepository;
   private final RestTemplate restTemplate;
   private final String supabaseAuthUrl;
@@ -45,15 +50,28 @@ public class AuthService {
   }
 
   /**
-   * Autentica o usuário junto ao Supabase Auth e retorna o perfil e os tokens
+   * Autentica o usuário junto ao Supabase Auth e retorna o perfil e os tokens.
+   * E-mail não confirmado é 403 (não 401), para o app oferecer o reenvio do link.
+   * Conta sem perfil é um cadastro que não terminou: o perfil exige CPF, então
+   * não é criado aqui; refazer o cadastro com a mesma senha conclui.
    */
-  @Transactional
+  @Transactional(readOnly = true)
   public AuthResponseDTO login(LoginRequestDTO request) {
-    AuthTokens tokens = authenticate("/token?grant_type=password", request.email(), request.password(), "Credenciais inválidas.");
+    AuthTokens tokens;
+    try {
+      tokens = authenticate("/token?grant_type=password", request.email(), request.password(), "Credenciais inválidas.");
+    } catch (LoginRejectedException rejected) {
+      String body = rejected.response.getResponseBodyAsString();
+      if (body.contains("email_not_confirmed")) {
+        throw new EmailNotConfirmedException();
+      }
+      if (rejected.response.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
+        throw new AuthRateLimitException(AuthRateLimitException.REQUEST, null);
+      }
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas.");
+    }
     UserProfileEntity profile = userProfileRepository.findById(tokens.userId())
-            .orElseGet(() -> userProfileRepository.save(
-                    createDefaultProfile(tokens.userId(), normalizeEmail(request.email()), "Usuário")
-            ));
+            .orElseThrow(() -> new FieldConflictException("email", INCOMPLETE_SIGNUP));
     return toResponse(tokens, profile);
   }
 
@@ -98,6 +116,9 @@ public class AuthService {
       );
       return parseTokens(response.getBody());
     } catch (RestClientResponseException exception) {
+      if (path.startsWith("/token")) {
+        throw new LoginRejectedException(exception);
+      }
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, errorMessage);
     } catch (RestClientException exception) {
       throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Serviço de autenticação indisponível.");
@@ -173,4 +194,14 @@ public class AuthService {
   }
 
   private record AuthTokens(String accessToken, String refreshToken, UUID userId) {}
+
+  /** Recusa do /token, tratada em {@link #login} conforme o motivo. */
+  private static final class LoginRejectedException extends RuntimeException {
+    private final RestClientResponseException response;
+
+    private LoginRejectedException(RestClientResponseException cause) {
+      super(cause);
+      this.response = cause;
+    }
+  }
 }

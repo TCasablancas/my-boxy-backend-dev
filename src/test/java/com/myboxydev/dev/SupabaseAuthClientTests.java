@@ -162,6 +162,27 @@ class SupabaseAuthClientTests {
   }
 
   @Test
+  void resendSendsSignupTypeAndHidesRefusals() {
+    server.expect(requestTo("https://example.test/auth/v1/resend")).andExpect(method(HttpMethod.POST))
+            .andRespond(withStatus(HttpStatus.BAD_REQUEST).contentType(MediaType.APPLICATION_JSON)
+                    .body("{\"code\":400,\"error_code\":\"validation_failed\"}"));
+
+    client.resendSignupConfirmation("ana@myboxy.com");
+    server.verify();
+  }
+
+  @Test
+  void resendRateLimitKeepsTheWait() {
+    server.expect(requestTo("https://example.test/auth/v1/resend")).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body("{\"code\":429,\"error_code\":\"over_email_send_rate_limit\",\"msg\":\"you can only request this after 45 seconds.\"}"));
+
+    assertThatThrownBy(() -> client.resendSignupConfirmation("ana@myboxy.com"))
+            .isInstanceOfSatisfying(AuthRateLimitException.class,
+                    e -> assertThat(e.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("45"));
+  }
+
+  @Test
   void maskEmailsKeepsOnlyTheInitial() {
     assertThat(SupabaseAuthClient.maskEmails("Key (email)=(teste+123@exemplo.test) already exists."))
             .isEqualTo("Key (email)=(t***@exemplo.test) already exists.");
