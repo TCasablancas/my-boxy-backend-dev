@@ -72,9 +72,10 @@ public class UserAddressService {
 
   @Transactional
   public AddressResponseDTO setPrimaryAddress(UUID userId, UUID addressId) {
-    addressRepository.clearPrimaryAddressesForUser(userId);
+    // Confere o dono antes de mexer em qualquer endereço; de outro usuário é 404
     UserAddressEntity address = addressRepository.findByIdAndUserProfileId(addressId, userId)
-            .orElseThrow(() -> new RuntimeException("Endereço não encontrado."));
+            .orElseThrow(() -> new ResourceNotFoundException("Endereço não encontrado ou não pertence a este usuário"));
+    addressRepository.clearPrimaryAddressesForUser(userId);
     address.setIsPrimary(true);
     UserAddressEntity updated = addressRepository.save(address);
     return toResponseDTO(updated);

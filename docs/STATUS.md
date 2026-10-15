@@ -1,6 +1,6 @@
 # Status do projeto
 
-Última atualização: 2026-10-15 (endurecimento do cadastro: órfão, envio duplicado, erros por campo).
+Última atualização: 2026-10-15 (set-primary com JWT; home: header e banners).
 Agentes: atualizem este arquivo ao terminar uma tarefa.
 
 ## Feito
@@ -8,6 +8,8 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
 - **Auth via BFF (Supabase Auth):** `POST /api/auth/login`, `POST /api/auth/signup` (cria usuário no Auth + `user_profiles` com CPF já cifrado no INSERT + endereço principal numa transação; desfaz no Auth com service role, com 1 nova tentativa, se o perfil falhar; repetir o cadastro de conta órfã (confirmada ou não) com a mesma senha conclui o perfil sem novo `/signup`, conferindo a senha no banco com pgcrypto; com outra senha é 409, inclusive quando o `/signup` de e-mail não confirmado devolve o usuário existente; envio duplicado simultâneo devolve 409 `email` sem apagar a conta que concluiu; se o Auth não responder, remove o usuário criado nesse meio-tempo antes do 503), `POST /api/auth/set-password`.
   - Checagem prévia de disponibilidade: `/api/auth/signup/check-alias` e `/api/auth/signup/check-cpf`.
   - `address` é opcional no signup: sem ele, só o perfil é criado (o endereço fica para o primeiro checkout).
+- **Home (ADR-0002):** `GET /api/home/banners` (público; até 8 banners no ar, ordem `sort_order`, `Cache-Control: public, max-age=300`, ETag/304; link inválido sai nulo) e `GET /api/v1/me/home-header` (JWT; só `display_name`, `alias` e `location{city,state}` do endereço principal; 404 sem perfil).
+  - Tabela `public.home_banners` + bucket `home-banners`: migration em `supabase/migrations/20261015120000_home_banners.sql` (aplicar à mão); seed só de dev em `supabase/seed/home_banners_dev.sql`.
   - Renovação de sessão: `POST /api/auth/refresh` `{refresh_token}` → 200 no formato do login (o Supabase gira o refresh token; o app guarda o novo); token inválido, usado ou expirado → 401.
   - Reenvio do link de confirmação: `POST /api/auth/signup/resend-confirmation` `{email}` → sempre 202 (não revela se a conta existe), 429 com `Retry-After` quando o Supabase limita.
   - Login: e-mail não confirmado → 403 (não mais 401); conta do Auth sem perfil → 409 `email` pedindo para refazer o cadastro (antes tentava criar perfil sem CPF e dava 500); 429 repassado.
@@ -18,7 +20,7 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
 - **Frete:** `POST /api/shipping/calculate` (Melhor Envio).
 - **Checkout de visitante:** `POST /api/checkout/express-guest` (Stripe + Melhor Envio).
 - **Segurança:** JWT do Supabase validado pelo `issuer-uri`, CORS por variável, chaves do Supabase validadas no boot.
-- **Testes:** 10 classes (signup, disponibilidade, cliente Supabase Auth, propriedades, segurança, mapeamento de entidades, contexto, contrato OpenAPI). `./mvnw -B test` em 2026-10-15: 67 testes, 0 falhas. `EntityMappingTests` confere que as colunas NOT NULL de `user_profiles` no Supabase também são obrigatórias na entidade (o H2 dos testes nasce da entidade).
+- **Testes:** 10 classes (signup, disponibilidade, cliente Supabase Auth, propriedades, segurança, mapeamento de entidades, contexto, contrato OpenAPI). `./mvnw -B test` em 2026-10-15: 82 testes, 0 falhas. `EntityMappingTests` confere que as colunas NOT NULL de `user_profiles` no Supabase também são obrigatórias na entidade (o H2 dos testes nasce da entidade).
 - **Contrato OpenAPI:** `/v3/api-docs` funciona (springdoc 2.7.0 com Boot 4.1.1), lista os 22 paths e respeita os nomes snake_case; coberto por `OpenApiDocsTests`.
 - **Deploy:** Railway via `Dockerfile` (branch `main`).
 
@@ -33,6 +35,7 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
 - Área do vendedor (`/api/seller/**` está protegida no `SecurityConfig`, mas ainda não há controller) e checkout autenticado (`/api/checkout/**`).
 
 ## Pontos de atenção (encontrados no levantamento, ainda não corrigidos)
+- Corrigido em `fix/address-set-primary-jwt`: `PUT /api/v1/me/addresses/{id}/set-primary` lia o usuário do header `X-User-Id`; agora usa o JWT e responde 404 para endereço de outro usuário.
 - `AuthService.login` cria um perfil padrão sem CPF quando o usuário do Auth não tem perfil; com `cpf_encrypted`/`cpf_hash` NOT NULL esse insert falha. O mesmo vale para o `register` (deprecated).
 - Dev e prod usam o mesmo projeto Supabase: testes de cadastro gastam a cota de e-mail de usuários reais.
 - `PGCRYPTO_SECRET_KEY` e `SUPABASE_JWT_SECRET` não têm mais valor padrão no `application.yaml`: sem a variável o boot falha. Conferir no Railway antes do deploy (trocar a chave invalida os CPFs já cifrados).

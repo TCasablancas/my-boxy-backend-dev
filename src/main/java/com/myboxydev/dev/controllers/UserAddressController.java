@@ -44,11 +44,16 @@ public class UserAddressController {
     return ResponseEntity.noContent().build();
   }
 
+  /**
+   * Marca o endereço como principal. O usuário vem do JWT: nunca de header ou
+   * corpo, para ninguém trocar o endereço principal de outra pessoa.
+   */
   @PutMapping("/{addressId}/set-primary")
   public ResponseEntity<AddressResponseDTO> setPrimary(
-    @RequestHeader("X-User-Id") UUID userId,
-    @PathVariable UUID addressId
+    @AuthenticationPrincipal Jwt jwt,
+    @PathVariable("addressId") UUID addressId
   ) {
+    UUID userId = UUID.fromString(jwt.getSubject());
     AddressResponseDTO updated = addressService.setPrimaryAddress(userId, addressId);
     return ResponseEntity.ok(updated);
   }
