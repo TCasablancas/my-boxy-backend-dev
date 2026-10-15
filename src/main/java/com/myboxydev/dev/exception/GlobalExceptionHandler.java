@@ -46,6 +46,19 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
   }
 
+  @ExceptionHandler(FieldValidationException.class)
+  public ResponseEntity<ApiErrorResponseDTO> handleFieldValidation(FieldValidationException ex, HttpServletRequest request) {
+    ApiErrorResponseDTO error = new ApiErrorResponseDTO(
+      HttpStatus.BAD_REQUEST.value(),
+      "Validation Error",
+      ex.getMessage(),
+      request.getRequestURI(),
+      OffsetDateTime.now(),
+      List.of(new ApiErrorResponseDTO.FieldErrorDTO(ex.getField(), ex.getMessage()))
+    );
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+  }
+
   @ExceptionHandler(BusinessRuleException.class)
   public ResponseEntity<ApiErrorResponseDTO> handleBusinessRule(RuntimeException ex, HttpServletRequest request) {
     ApiErrorResponseDTO error = new ApiErrorResponseDTO(

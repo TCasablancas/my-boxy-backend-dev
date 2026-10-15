@@ -4,6 +4,7 @@ import com.myboxydev.dev.config.SupabaseProperties;
 import com.myboxydev.dev.exception.AuthRateLimitException;
 import com.myboxydev.dev.exception.AuthUnavailableException;
 import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
+import com.myboxydev.dev.exception.FieldValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
@@ -23,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Cliente HTTP do Supabase Auth (GoTrue) usado no cadastro.
@@ -33,7 +36,10 @@ import java.util.UUID;
 public class SupabaseAuthClient {
   public static final String REASON_EMAIL_EXISTS = "Auth: email_exists";
   public static final String REASON_EMPTY_IDENTITIES = "Auth: identities vazio";
+  public static final String REASON_CONCURRENT_SIGNUP = "Auth: /signup simultâneo";
   private static final int DELETE_ATTEMPTS = 2;
+  private static final Pattern WAIT_SECONDS = Pattern.compile("after (\\d+) seconds?");
+  private static final Pattern EMAIL = Pattern.compile("([A-Za-z0-9])[A-Za-z0-9._%+-]*@");
 
   private final RestTemplate restTemplate;
   private final SupabaseProperties supabaseProperties;
@@ -66,37 +72,6 @@ public class SupabaseAuthClient {
     } catch (RestClientException exception) {
       log.error("Supabase /signup inacessível: {}", exception.getClass().getSimpleName());
       throw new AuthUnavailableException();
-    }
-  }
-
-  /**
-   * Confere e-mail e senha no Auth (login por senha) e devolve o id do usuário,
-   * ou null se as credenciais não conferem ou o e-mail ainda não foi confirmado.
-   * Não envia e-mail, então não gasta a cota de envio. A sessão é descartada.
-   */
-  public UUID verifyPassword(String email, String password) {
-    Map<String, Object> body = Map.of("email", email, "password", password);
-    try {
-      ResponseEntity<Map> response = restTemplate.postForEntity(
-              supabaseProperties.getAuthUrl() + "/token?grant_type=password",
-              new HttpEntity<>(body, headers(supabaseProperties.getAnonKey())),
-              Map.class
-      );
-      Map<?, ?> responseBody = response.getBody();
-      if (responseBody == null || !(responseBody.get("user") instanceof Map<?, ?> user)) {
-        throw invalidResponse();
-      }
-      return UUID.fromString((String) user.get("id"));
-    } catch (RestClientResponseException exception) {
-      if (exception.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
-        throw translateRateLimit(exception, exception.getResponseBodyAsString());
-      }
-      return null;
-    } catch (RestClientException exception) {
-      log.error("Supabase /token inacessível: {}", exception.getClass().getSimpleName());
-      throw new AuthUnavailableException();
-    } catch (IllegalArgumentException | ClassCastException | NullPointerException exception) {
-      throw invalidResponse();
     }
   }
 
@@ -148,11 +123,15 @@ public class SupabaseAuthClient {
     if (body.contains("user_already_exists") || body.contains("email_exists")) {
       return new EmailAlreadyInAuthException(REASON_EMAIL_EXISTS);
     }
+    // Dois /signup simultâneos do mesmo e-mail: o segundo esbarra no unique de auth.users e volta 500
+    if (body.contains("users_email_partial_key")) {
+      return new EmailAlreadyInAuthException(REASON_CONCURRENT_SIGNUP);
+    }
     if (body.contains("weak_password")) {
-      return new ResponseStatusException(HttpStatus.BAD_REQUEST, "A senha não atende aos requisitos de segurança.");
+      return new FieldValidationException("password", "A senha não atende aos requisitos de segurança.");
     }
     if (body.contains("email_address_invalid")) {
-      return new ResponseStatusException(HttpStatus.BAD_REQUEST, "E-mail inválido.");
+      return new FieldValidationException("email", "E-mail inválido.");
     }
     if (exception.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
       return translateRateLimit(exception, body);
@@ -160,10 +139,10 @@ public class SupabaseAuthClient {
     if (exception.getStatusCode().value() == HttpStatus.UNAUTHORIZED.value()
             || exception.getStatusCode().value() == HttpStatus.FORBIDDEN.value()) {
       // Chave inválida ou de outro projeto: problema de configuração do BFF, não do usuário
-      log.error("Supabase /signup recusou a SUPABASE_ANON_KEY ({}): {}", exception.getStatusCode(), body);
+      log.error("Supabase /signup recusou a SUPABASE_ANON_KEY ({}): {}", exception.getStatusCode(), maskEmails(body));
       return new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Serviço de autenticação indisponível.");
     }
-    log.warn("Supabase /signup respondeu {}: {}", exception.getStatusCode(), body);
+    log.warn("Supabase /signup respondeu {}: {}", exception.getStatusCode(), maskEmails(body));
     return new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Não foi possível criar a conta.");
   }
 
@@ -177,7 +156,10 @@ public class SupabaseAuthClient {
             : body.contains(AuthRateLimitException.REQUEST) ? AuthRateLimitException.REQUEST
             : "unknown";
     Long retryAfter = parseRetryAfter(exception.getResponseHeaders());
-    log.warn("Supabase /signup respondeu 429 [{}] retry-after={}s: {}", errorCode, retryAfter, body);
+    if (retryAfter == null) {
+      retryAfter = parseWaitFromMessage(body);
+    }
+    log.warn("Supabase /signup respondeu 429 [{}] retry-after={}s: {}", errorCode, retryAfter, maskEmails(body));
     return new AuthRateLimitException(errorCode, retryAfter);
   }
 
@@ -189,6 +171,20 @@ public class SupabaseAuthClient {
     } catch (NumberFormatException exception) {
       return null;
     }
+  }
+
+  /**
+   * O limite por usuário (um e-mail a cada 60 s) não manda Retry-After, só o
+   * texto "you can only request this after N seconds". Mínimo de 1 s.
+   */
+  private Long parseWaitFromMessage(String body) {
+    Matcher matcher = WAIT_SECONDS.matcher(body);
+    return matcher.find() ? Math.max(1L, Long.parseLong(matcher.group(1))) : null;
+  }
+
+  /** Respostas do Auth podem ecoar o e-mail (ex.: detalhe do unique); o log leva só a inicial. */
+  public static String maskEmails(String text) {
+    return text == null ? null : EMAIL.matcher(text).replaceAll("$1***@");
   }
 
   private ResponseStatusException invalidResponse() {

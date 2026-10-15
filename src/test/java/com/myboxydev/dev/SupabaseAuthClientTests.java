@@ -4,6 +4,7 @@ import com.myboxydev.dev.config.SupabaseProperties;
 import com.myboxydev.dev.exception.AuthRateLimitException;
 import com.myboxydev.dev.exception.AuthUnavailableException;
 import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
+import com.myboxydev.dev.exception.FieldValidationException;
 import com.myboxydev.dev.service.SupabaseAuthClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,6 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class SupabaseAuthClientTests {
   private static final String SIGNUP_URL = "https://example.test/auth/v1/signup";
-  private static final String TOKEN_URL = "https://example.test/auth/v1/token?grant_type=password";
 
   private MockRestServiceServer server;
   private SupabaseAuthClient client;
@@ -129,21 +129,42 @@ class SupabaseAuthClientTests {
   }
 
   @Test
-  void verifyPasswordReturnsUserIdOnValidCredentials() {
-    UUID id = UUID.randomUUID();
-    server.expect(requestTo(TOKEN_URL)).andExpect(method(HttpMethod.POST)).andExpect(header("apikey", "anon"))
-            .andRespond(withSuccess("{\"access_token\":\"t\",\"user\":{\"id\":\"" + id + "\"}}", MediaType.APPLICATION_JSON));
+  void concurrentSignupOfSameEmailIsEmailConflict() {
+    // Segundo /signup simultâneo: a GoTrue esbarra no unique de auth.users e responde 500
+    server.expect(requestTo(SIGNUP_URL)).andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body("{\"code\":\"23505\",\"message\":\"duplicate key value violates unique constraint \\\"users_email_partial_key\\\"\"}"));
 
-    assertThat(client.verifyPassword("ana@myboxy.com", "s3nh@forte")).isEqualTo(id);
+    assertThatThrownBy(() -> client.signUp("ana@myboxy.com", "s3nh@forte", Map.of()))
+            .isInstanceOfSatisfying(EmailAlreadyInAuthException.class,
+                    e -> assertThat(e.getReason()).isEqualTo(SupabaseAuthClient.REASON_CONCURRENT_SIGNUP));
   }
 
   @Test
-  void verifyPasswordReturnsNullOnInvalidCredentials() {
-    server.expect(requestTo(TOKEN_URL)).andRespond(withStatus(HttpStatus.BAD_REQUEST)
+  void perUserEmailLimitUsesTheWaitFromTheMessage() {
+    server.expect(requestTo(SIGNUP_URL)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
             .contentType(MediaType.APPLICATION_JSON)
-            .body("{\"code\":400,\"error_code\":\"invalid_credentials\"}"));
+            .body("{\"code\":429,\"error_code\":\"over_email_send_rate_limit\",\"msg\":\"For security purposes, you can only request this after 37 seconds.\"}"));
 
-    assertThat(client.verifyPassword("ana@myboxy.com", "outra")).isNull();
+    assertThatThrownBy(() -> client.signUp("ana@myboxy.com", "s3nh@forte", Map.of()))
+            .isInstanceOfSatisfying(AuthRateLimitException.class,
+                    e -> assertThat(e.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("37"));
+  }
+
+  @Test
+  void weakPasswordPointsToThePasswordField() {
+    server.expect(requestTo(SIGNUP_URL)).andRespond(withStatus(HttpStatus.UNPROCESSABLE_CONTENT)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body("{\"code\":422,\"error_code\":\"weak_password\"}"));
+
+    assertThatThrownBy(() -> client.signUp("ana@myboxy.com", "123456", Map.of()))
+            .isInstanceOfSatisfying(FieldValidationException.class, e -> assertThat(e.getField()).isEqualTo("password"));
+  }
+
+  @Test
+  void maskEmailsKeepsOnlyTheInitial() {
+    assertThat(SupabaseAuthClient.maskEmails("Key (email)=(teste+123@exemplo.test) already exists."))
+            .isEqualTo("Key (email)=(t***@exemplo.test) already exists.");
   }
 
   @Test

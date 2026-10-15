@@ -142,6 +142,8 @@ public class SecurityConfig {
     config.setAllowedOrigins(allowedOrigins);
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("*"));
+    // O app web precisa ler o tempo de espera de um 429
+    config.setExposedHeaders(List.of("Retry-After"));
     config.setAllowCredentials(false);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

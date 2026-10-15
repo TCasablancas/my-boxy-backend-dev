@@ -33,6 +33,14 @@ public interface UserProfileRepository extends JpaRepository<UserProfileEntity, 
     nativeQuery = true
   )
   UUID findRecentAuthUserIdWithoutProfile(@Param("email") String email);
+  // Confere a senha contra o hash bcrypt do Auth (pgcrypto), sem login: vale também
+  // para e-mail ainda não confirmado. null quando o usuário não existe
+  @Query(
+    value = "SELECT u.encrypted_password = extensions.crypt(:password, u.encrypted_password) "
+          + "FROM auth.users u WHERE u.id = :userId",
+    nativeQuery = true
+  )
+  Boolean authPasswordMatches(@Param("userId") UUID userId, @Param("password") String password);
   // Cifra o CPF com pgcrypto sem gravar nada, para o INSERT do perfil já levar o valor
   @Query(
     value = "SELECT CAST(extensions.pgp_sym_encrypt(:rawCpf, :secretKey) AS text)",
