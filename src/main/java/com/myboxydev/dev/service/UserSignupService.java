@@ -97,6 +97,13 @@ public class UserSignupService {
   }
 
   /**
+   * Reenvia o link de confirmação. A resposta é a mesma exista ou não a conta.
+   */
+  public void resendConfirmation(String rawEmail) {
+    supabaseAuthClient.resendSignupConfirmation(rawEmail.trim().toLowerCase(Locale.ROOT));
+  }
+
+  /**
    * Cria o usuário no Auth, ou reaproveita uma conta órfã (Auth sem perfil) de
    * um cadastro anterior. Em todos os casos o id só segue se a senha enviada
    * for a da conta: o /signup de um e-mail ainda não confirmado devolve o

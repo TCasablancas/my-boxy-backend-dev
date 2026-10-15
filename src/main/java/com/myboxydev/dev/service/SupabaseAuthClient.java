@@ -76,6 +76,35 @@ public class SupabaseAuthClient {
   }
 
   /**
+   * Reenvia o e-mail de confirmação do cadastro. Só o 429 e a falha de rede
+   * chegam ao app: qualquer outra recusa (e-mail inexistente ou já confirmado)
+   * é só logada, para a rota não revelar quais e-mails têm conta.
+   */
+  public void resendSignupConfirmation(String email) {
+    UriComponentsBuilder uri = UriComponentsBuilder.fromUriString(supabaseProperties.getAuthUrl() + "/resend");
+    String emailRedirectUrl = supabaseProperties.getEmailRedirectUrl();
+    if (emailRedirectUrl != null && !emailRedirectUrl.isBlank()) {
+      uri.queryParam("redirect_to", emailRedirectUrl);
+    }
+    try {
+      restTemplate.postForEntity(
+              uri.build().toUri(),
+              new HttpEntity<>(Map.of("type", "signup", "email", email), headers(supabaseProperties.getAnonKey())),
+              Map.class
+      );
+    } catch (RestClientResponseException exception) {
+      if (exception.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
+        throw translateRateLimit(exception, exception.getResponseBodyAsString());
+      }
+      log.warn("Supabase /resend respondeu {}: {}", exception.getStatusCode(),
+              maskEmails(exception.getResponseBodyAsString()));
+    } catch (RestClientException exception) {
+      log.error("Supabase /resend inacessível: {}", exception.getClass().getSimpleName());
+      throw new AuthUnavailableException();
+    }
+  }
+
+  /**
    * Remove o usuário de auth.users. Usado como compensação quando o perfil não
    * pode ser persistido, para não deixar conta órfã que bloqueia o e-mail.
    * Tenta duas vezes; devolve false se o usuário continuou lá.
@@ -159,7 +188,7 @@ public class SupabaseAuthClient {
     if (retryAfter == null) {
       retryAfter = parseWaitFromMessage(body);
     }
-    log.warn("Supabase /signup respondeu 429 [{}] retry-after={}s: {}", errorCode, retryAfter, maskEmails(body));
+    log.warn("Supabase Auth respondeu 429 [{}] retry-after={}s: {}", errorCode, retryAfter, maskEmails(body));
     return new AuthRateLimitException(errorCode, retryAfter);
   }
 

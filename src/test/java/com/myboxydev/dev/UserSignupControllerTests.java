@@ -107,4 +107,22 @@ class UserSignupControllerTests {
             .andExpect(header().string("Retry-After", "600"))
             .andExpect(jsonPath("$.status").value(429));
   }
+
+  @Test
+  void resendConfirmationIsPublicAndAlwaysAccepted() throws Exception {
+    mockMvc.perform(post("/api/auth/signup/resend-confirmation").contentType("application/json")
+                    .content("{\"email\":\"ana@myboxy.com\"}"))
+            .andExpect(status().isAccepted());
+  }
+
+  @Test
+  void resendConfirmationPassesRateLimitThrough() throws Exception {
+    org.mockito.Mockito.doThrow(new AuthRateLimitException(AuthRateLimitException.EMAIL_SEND, 42L))
+            .when(userSignupService).resendConfirmation(any());
+
+    mockMvc.perform(post("/api/auth/signup/resend-confirmation").contentType("application/json")
+                    .content("{\"email\":\"ana@myboxy.com\"}"))
+            .andExpect(status().isTooManyRequests())
+            .andExpect(header().string("Retry-After", "42"));
+  }
 }
