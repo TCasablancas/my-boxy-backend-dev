@@ -2,6 +2,7 @@ package com.myboxydev.dev.controllers;
 
 import com.myboxydev.dev.dto.AuthResponseDTO;
 import com.myboxydev.dev.dto.LoginRequestDTO;
+import com.myboxydev.dev.dto.RefreshTokenRequestDTO;
 import com.myboxydev.dev.dto.RegisterRequestDTO;
 import com.myboxydev.dev.dto.SetPasswordRequestDTO;
 import com.myboxydev.dev.dto.SignupAliasCheckRequestDTO;
@@ -33,6 +34,14 @@ public class AuthController {
   public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
     AuthResponseDTO response = authService.login(request);
     return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Renova a sessão com o refresh token. 401 quando ele é inválido ou expirou.
+   */
+  @PostMapping("/refresh")
+  public ResponseEntity<AuthResponseDTO> refresh(@Valid @RequestBody RefreshTokenRequestDTO request) {
+    return ResponseEntity.ok(authService.refresh(request));
   }
 
   /**
