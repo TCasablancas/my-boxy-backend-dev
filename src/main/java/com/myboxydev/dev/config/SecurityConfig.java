@@ -115,6 +115,7 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/subcategories/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/users/check-alias").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/menu/**").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/home/banners").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/shipping/calculate").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/checkout/express-guest").permitAll()
@@ -143,7 +144,7 @@ public class SecurityConfig {
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("*"));
     // O app web precisa ler o tempo de espera de um 429
-    config.setExposedHeaders(List.of("Retry-After"));
+    config.setExposedHeaders(List.of("Retry-After", "ETag"));
     config.setAllowCredentials(false);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
