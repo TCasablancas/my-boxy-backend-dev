@@ -4,6 +4,7 @@ import com.myboxydev.dev.config.SupabaseProperties;
 import com.myboxydev.dev.domain.entity.UserProfileEntity;
 import com.myboxydev.dev.dto.AuthResponseDTO;
 import com.myboxydev.dev.dto.LoginRequestDTO;
+import com.myboxydev.dev.dto.RefreshTokenRequestDTO;
 import com.myboxydev.dev.exception.AuthRateLimitException;
 import com.myboxydev.dev.exception.EmailNotConfirmedException;
 import com.myboxydev.dev.exception.FieldConflictException;
@@ -101,5 +102,32 @@ class AuthServiceLoginTests {
 
     assertThatThrownBy(() -> service.login(new LoginRequestDTO("ana@myboxy.com", "s3nh@forte")))
             .isInstanceOfSatisfying(FieldConflictException.class, e -> assertThat(e.getField()).isEqualTo("email"));
+  }
+
+  private static final String REFRESH_URL = "https://example.test/auth/v1/token?grant_type=refresh_token";
+
+  @Test
+  void refreshReturnsNewTokensAndProfile() {
+    server.expect(requestTo(REFRESH_URL)).andRespond(withSuccess(
+            "{\"access_token\":\"novo\",\"refresh_token\":\"r2\",\"user\":{\"id\":\"" + USER_ID + "\"}}",
+            MediaType.APPLICATION_JSON));
+    when(userProfileRepository.findById(USER_ID)).thenReturn(Optional.of(UserProfileEntity.builder()
+            .id(USER_ID).email("ana@myboxy.com").alias("ana").fullName("Ana Souza").isSeller(false).build()));
+
+    AuthResponseDTO response = service.refresh(new RefreshTokenRequestDTO("r1"));
+
+    assertThat(response.accessToken()).isEqualTo("novo");
+    assertThat(response.refreshToken()).isEqualTo("r2");
+  }
+
+  @Test
+  void invalidOrUsedRefreshTokenIs401() {
+    server.expect(requestTo(REFRESH_URL)).andRespond(withStatus(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body("{\"code\":400,\"error_code\":\"refresh_token_already_used\"}"));
+
+    assertThatThrownBy(() -> service.refresh(new RefreshTokenRequestDTO("velho")))
+            .isInstanceOfSatisfying(ResponseStatusException.class,
+                    e -> assertThat(e.getStatusCode().value()).isEqualTo(401));
   }
 }

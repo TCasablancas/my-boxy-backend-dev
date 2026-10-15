@@ -137,4 +137,10 @@ class UserSignupControllerTests {
     mockMvc.perform(post("/api/auth/signup").contentType("application/json").content(body))
             .andExpect(status().isCreated());
   }
+
+  @Test
+  void refreshIsPublicAndValidatesTheBody() throws Exception {
+    mockMvc.perform(post("/api/auth/refresh").contentType("application/json").content("{}"))
+            .andExpect(status().isBadRequest());
+  }
 }

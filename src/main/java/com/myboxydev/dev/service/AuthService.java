@@ -3,6 +3,7 @@ package com.myboxydev.dev.service;
 import com.myboxydev.dev.config.SupabaseProperties;
 import com.myboxydev.dev.dto.AuthResponseDTO;
 import com.myboxydev.dev.dto.LoginRequestDTO;
+import com.myboxydev.dev.dto.RefreshTokenRequestDTO;
 import com.myboxydev.dev.dto.RegisterRequestDTO;
 import com.myboxydev.dev.dto.SetPasswordRequestDTO;
 import com.myboxydev.dev.domain.entity.UserProfileEntity;
@@ -31,6 +32,7 @@ import java.util.UUID;
 
 @Service
 public class AuthService {
+  static final String SESSION_EXPIRED = "Sua sessão expirou. Entre de novo.";
   static final String INCOMPLETE_SIGNUP =
           "Seu cadastro não foi concluído. Faça o cadastro de novo com o mesmo e-mail e senha para terminar.";
   private final UserProfileRepository userProfileRepository;
@@ -69,6 +71,34 @@ public class AuthService {
         throw new AuthRateLimitException(AuthRateLimitException.REQUEST, null);
       }
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais inválidas.");
+    }
+    UserProfileEntity profile = userProfileRepository.findById(tokens.userId())
+            .orElseThrow(() -> new FieldConflictException("email", INCOMPLETE_SIGNUP));
+    return toResponse(tokens, profile);
+  }
+
+  /**
+   * Troca o refresh token por uma sessão nova (mesmo formato do login). O
+   * Supabase gira o refresh token: o app deve guardar o novo e descartar o
+   * antigo. Token inválido, já usado ou expirado é 401: a pessoa entra de novo.
+   */
+  @Transactional(readOnly = true)
+  public AuthResponseDTO refresh(RefreshTokenRequestDTO request) {
+    AuthTokens tokens;
+    try {
+      ResponseEntity<Map> response = restTemplate.postForEntity(
+              supabaseAuthUrl + "/token?grant_type=refresh_token",
+              new HttpEntity<>(Map.of("refresh_token", request.refreshToken()), requestHeaders()),
+              Map.class
+      );
+      tokens = parseTokens(response.getBody());
+    } catch (RestClientResponseException exception) {
+      if (exception.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
+        throw new AuthRateLimitException(AuthRateLimitException.REQUEST, null);
+      }
+      throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, SESSION_EXPIRED);
+    } catch (RestClientException exception) {
+      throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Serviço de autenticação indisponível.");
     }
     UserProfileEntity profile = userProfileRepository.findById(tokens.userId())
             .orElseThrow(() -> new FieldConflictException("email", INCOMPLETE_SIGNUP));
