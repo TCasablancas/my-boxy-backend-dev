@@ -277,6 +277,19 @@ class UserSignupServiceTests {
             .isInstanceOfSatisfying(FieldValidationException.class, e -> assertThat(e.getField()).isEqualTo("alias"));
   }
 
+  @Test
+  void signupWithoutAddressCreatesOnlyTheProfile() {
+    when(supabaseAuthClient.signUp(anyString(), anyString(), anyMap())).thenReturn(USER_ID);
+    UserSignupRequestDTO base = request("ana", VALID_CPF);
+    UserSignupRequestDTO withoutAddress = new UserSignupRequestDTO(
+            base.fullName(), base.alias(), base.cpf(), base.email(), base.phoneNumber(), base.password(), null);
+
+    UserSignupResponseDTO response = service.signup(withoutAddress);
+
+    assertThat(response.id()).isEqualTo(USER_ID);
+    verify(userAddressRepository, never()).save(any());
+  }
+
   private DataIntegrityViolationException integrityViolation(String sqlState, String constraint) {
     SQLException sql = new SQLException("violação", sqlState);
     return new DataIntegrityViolationException("could not execute statement",
