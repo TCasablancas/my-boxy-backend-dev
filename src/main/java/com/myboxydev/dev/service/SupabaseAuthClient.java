@@ -2,6 +2,7 @@ package com.myboxydev.dev.service;
 
 import com.myboxydev.dev.config.SupabaseProperties;
 import com.myboxydev.dev.exception.AuthRateLimitException;
+import com.myboxydev.dev.exception.AuthUnavailableException;
 import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ import java.util.UUID;
 public class SupabaseAuthClient {
   public static final String REASON_EMAIL_EXISTS = "Auth: email_exists";
   public static final String REASON_EMPTY_IDENTITIES = "Auth: identities vazio";
+  private static final int DELETE_ATTEMPTS = 2;
 
   private final RestTemplate restTemplate;
   private final SupabaseProperties supabaseProperties;
@@ -62,27 +64,65 @@ public class SupabaseAuthClient {
     } catch (RestClientResponseException exception) {
       throw translateSignUpError(exception);
     } catch (RestClientException exception) {
-      log.error("Supabase /signup inacessível", exception);
-      throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Serviço de autenticação indisponível.");
+      log.error("Supabase /signup inacessível: {}", exception.getClass().getSimpleName());
+      throw new AuthUnavailableException();
+    }
+  }
+
+  /**
+   * Confere e-mail e senha no Auth (login por senha) e devolve o id do usuário,
+   * ou null se as credenciais não conferem ou o e-mail ainda não foi confirmado.
+   * Não envia e-mail, então não gasta a cota de envio. A sessão é descartada.
+   */
+  public UUID verifyPassword(String email, String password) {
+    Map<String, Object> body = Map.of("email", email, "password", password);
+    try {
+      ResponseEntity<Map> response = restTemplate.postForEntity(
+              supabaseProperties.getAuthUrl() + "/token?grant_type=password",
+              new HttpEntity<>(body, headers(supabaseProperties.getAnonKey())),
+              Map.class
+      );
+      Map<?, ?> responseBody = response.getBody();
+      if (responseBody == null || !(responseBody.get("user") instanceof Map<?, ?> user)) {
+        throw invalidResponse();
+      }
+      return UUID.fromString((String) user.get("id"));
+    } catch (RestClientResponseException exception) {
+      if (exception.getStatusCode().value() == HttpStatus.TOO_MANY_REQUESTS.value()) {
+        throw translateRateLimit(exception, exception.getResponseBodyAsString());
+      }
+      return null;
+    } catch (RestClientException exception) {
+      log.error("Supabase /token inacessível: {}", exception.getClass().getSimpleName());
+      throw new AuthUnavailableException();
+    } catch (IllegalArgumentException | ClassCastException | NullPointerException exception) {
+      throw invalidResponse();
     }
   }
 
   /**
    * Remove o usuário de auth.users. Usado como compensação quando o perfil não
    * pode ser persistido, para não deixar conta órfã que bloqueia o e-mail.
+   * Tenta duas vezes; devolve false se o usuário continuou lá.
    */
-  public void deleteUser(UUID userId) {
-    try {
-      restTemplate.exchange(
-              supabaseProperties.getAuthUrl() + "/admin/users/" + userId,
-              HttpMethod.DELETE,
-              new HttpEntity<>(headers(supabaseProperties.getServiceRoleKey())),
-              Void.class
-      );
-      log.info("Usuário {} removido do Supabase Auth (compensação do cadastro).", userId);
-    } catch (RestClientException exception) {
-      log.error("Falha ao remover usuário órfão {} do Supabase Auth.", userId, exception);
+  public boolean deleteUser(UUID userId) {
+    for (int attempt = 1; attempt <= DELETE_ATTEMPTS; attempt++) {
+      try {
+        restTemplate.exchange(
+                supabaseProperties.getAuthUrl() + "/admin/users/" + userId,
+                HttpMethod.DELETE,
+                new HttpEntity<>(headers(supabaseProperties.getServiceRoleKey())),
+                Void.class
+        );
+        log.info("Usuário {} removido do Supabase Auth (compensação do cadastro).", userId);
+        return true;
+      } catch (RestClientException exception) {
+        log.warn("Tentativa {}/{} de remover o usuário {} do Supabase Auth falhou: {}",
+                attempt, DELETE_ATTEMPTS, userId, exception.getClass().getSimpleName());
+      }
     }
+    log.error("CONTA ÓRFÃ: usuário {} ficou em auth.users sem perfil; remover manualmente.", userId);
+    return false;
   }
 
   private UUID parseCreatedUserId(Map<?, ?> body) {

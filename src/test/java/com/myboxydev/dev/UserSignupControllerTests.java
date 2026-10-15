@@ -2,6 +2,9 @@ package com.myboxydev.dev;
 
 import com.myboxydev.dev.dto.UserSignupRequestDTO;
 import com.myboxydev.dev.dto.UserSignupResponseDTO;
+import com.myboxydev.dev.exception.AuthRateLimitException;
+import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
+import com.myboxydev.dev.service.SupabaseAuthClient;
 import com.myboxydev.dev.service.UserSignupService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +20,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -80,5 +84,27 @@ class UserSignupControllerTests {
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.fieldErrors[?(@.field == 'full_name')]").exists())
             .andExpect(jsonPath("$.fieldErrors[?(@.field == 'address.postal_code')]").exists());
+  }
+
+  @Test
+  void emailConflictReturns409WithTheField() throws Exception {
+    when(userSignupService.signup(any(UserSignupRequestDTO.class)))
+            .thenThrow(new EmailAlreadyInAuthException(SupabaseAuthClient.REASON_EMAIL_EXISTS));
+
+    mockMvc.perform(post("/api/auth/signup").contentType("application/json").content(VALID_BODY))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value(EmailAlreadyInAuthException.MESSAGE))
+            .andExpect(jsonPath("$.fieldErrors[0].field").value("email"));
+  }
+
+  @Test
+  void rateLimitReturns429WithRetryAfter() throws Exception {
+    when(userSignupService.signup(any(UserSignupRequestDTO.class)))
+            .thenThrow(new AuthRateLimitException(AuthRateLimitException.EMAIL_SEND, null));
+
+    mockMvc.perform(post("/api/auth/signup").contentType("application/json").content(VALID_BODY))
+            .andExpect(status().isTooManyRequests())
+            .andExpect(header().string("Retry-After", "600"))
+            .andExpect(jsonPath("$.status").value(429));
   }
 }

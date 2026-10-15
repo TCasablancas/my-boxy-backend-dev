@@ -1,14 +1,16 @@
 package com.myboxydev.dev.exception;
 
 /**
- * O Supabase Auth recusou o cadastro porque o e-mail já existe em auth.users.
- * Responde 409 como as demais regras de negócio; o motivo vai só para o log.
+ * O e-mail já pertence a uma conta (no Supabase Auth ou em user_profiles).
+ * Responde 409 com o campo {@code email}; o motivo vai só para o log.
  */
-public class EmailAlreadyInAuthException extends BusinessRuleException {
+public class EmailAlreadyInAuthException extends FieldConflictException {
+  public static final String MESSAGE = "Já existe uma conta associada a este e-mail.";
+
   private final String reason;
 
   public EmailAlreadyInAuthException(String reason) {
-    super("Já existe uma conta associada a este e-mail.");
+    super("email", MESSAGE);
     this.reason = reason;
   }
 
