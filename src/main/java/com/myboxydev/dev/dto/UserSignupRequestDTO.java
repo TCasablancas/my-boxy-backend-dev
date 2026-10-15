@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -43,8 +42,8 @@ public record UserSignupRequestDTO(
   @Size(min = 6, max = 72, message = "A senha deve ter entre 6 e 72 caracteres")
   String password,
 
+  // Opcional: o endereço de entrega pode ser pedido só no primeiro checkout
   @JsonProperty("address")
-  @NotNull(message = "Informe o endereço")
   @Valid
   UserSignupAddressRequestDTO address
 ) {
@@ -91,7 +90,6 @@ public record UserSignupRequestDTO(
   /** Evita vazar CPF e senha caso o record seja logado. */
   @Override
   public String toString() {
-    return "UserSignupRequestDTO[fullName=" + fullName + ", alias=" + alias + ", email=" + email
-            + ", cpf=***, password=***]";
+    return "UserSignupRequestDTO[alias=" + alias + ", fullName=***, email=***, cpf=***, password=***]";
   }
 }

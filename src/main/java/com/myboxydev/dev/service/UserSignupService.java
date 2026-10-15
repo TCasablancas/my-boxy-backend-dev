@@ -270,6 +270,9 @@ public class UserSignupService {
     profile = userProfileRepository.saveAndFlush(profile);
 
     UserSignupRequestDTO.UserSignupAddressRequestDTO address = request.address();
+    if (address == null) {
+      return profile;
+    }
     userAddressRepository.save(UserAddressEntity.builder()
             .userProfile(profile)
             .street(address.addressLine1().trim())
