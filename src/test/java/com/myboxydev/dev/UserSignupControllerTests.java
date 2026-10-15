@@ -107,4 +107,34 @@ class UserSignupControllerTests {
             .andExpect(header().string("Retry-After", "600"))
             .andExpect(jsonPath("$.status").value(429));
   }
+
+  @Test
+  void resendConfirmationIsPublicAndAlwaysAccepted() throws Exception {
+    mockMvc.perform(post("/api/auth/signup/resend-confirmation").contentType("application/json")
+                    .content("{\"email\":\"ana@myboxy.com\"}"))
+            .andExpect(status().isAccepted());
+  }
+
+  @Test
+  void resendConfirmationPassesRateLimitThrough() throws Exception {
+    org.mockito.Mockito.doThrow(new AuthRateLimitException(AuthRateLimitException.EMAIL_SEND, 42L))
+            .when(userSignupService).resendConfirmation(any());
+
+    mockMvc.perform(post("/api/auth/signup/resend-confirmation").contentType("application/json")
+                    .content("{\"email\":\"ana@myboxy.com\"}"))
+            .andExpect(status().isTooManyRequests())
+            .andExpect(header().string("Retry-After", "42"));
+  }
+
+  @Test
+  void signupAcceptsMissingAddress() throws Exception {
+    String body = VALID_BODY.replaceAll("(?s),\\s*\"address\".*", "\n}");
+    UUID id = UUID.randomUUID();
+    when(userSignupService.signup(any(UserSignupRequestDTO.class))).thenReturn(new UserSignupResponseDTO(
+            id, "Ana Souza", "ana.souza", "ana@myboxy.com", "+5511988887777", null,
+            "ACTIVE", null, false, false, OffsetDateTime.now(), OffsetDateTime.now()));
+
+    mockMvc.perform(post("/api/auth/signup").contentType("application/json").content(body))
+            .andExpect(status().isCreated());
+  }
 }

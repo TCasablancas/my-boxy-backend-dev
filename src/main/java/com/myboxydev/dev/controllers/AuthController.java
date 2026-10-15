@@ -7,6 +7,7 @@ import com.myboxydev.dev.dto.SetPasswordRequestDTO;
 import com.myboxydev.dev.dto.SignupAliasCheckRequestDTO;
 import com.myboxydev.dev.dto.SignupAvailabilityResponseDTO;
 import com.myboxydev.dev.dto.SignupCpfCheckRequestDTO;
+import com.myboxydev.dev.dto.SignupResendConfirmationRequestDTO;
 import com.myboxydev.dev.dto.UserSignupRequestDTO;
 import com.myboxydev.dev.dto.UserSignupResponseDTO;
 import com.myboxydev.dev.service.AuthService;
@@ -59,6 +60,17 @@ public class AuthController {
   public ResponseEntity<SignupAvailabilityResponseDTO> checkSignupCpf(
           @Valid @RequestBody SignupCpfCheckRequestDTO request) {
     return ResponseEntity.ok(signupAvailabilityService.checkCpf(request.cpf()));
+  }
+
+  /**
+   * Reenvia o e-mail de confirmação do cadastro. Sempre 202, para não revelar
+   * se o e-mail tem conta; 429 com Retry-After quando o Supabase limita o envio.
+   */
+  @PostMapping("/signup/resend-confirmation")
+  public ResponseEntity<Void> resendSignupConfirmation(
+          @Valid @RequestBody SignupResendConfirmationRequestDTO request) {
+    userSignupService.resendConfirmation(request.email());
+    return ResponseEntity.accepted().build();
   }
 
   /**

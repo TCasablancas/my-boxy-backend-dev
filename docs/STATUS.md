@@ -7,6 +7,9 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
 - **Catálogo público:** produtos (`GET /api/products`, `/{id}`, `/{id}/related`, filtros via `ProductSpecifications`), lojas (`/api/stores`), categorias (`/api/categories`), menu (`/api/menu`).
 - **Auth via BFF (Supabase Auth):** `POST /api/auth/login`, `POST /api/auth/signup` (cria usuário no Auth + `user_profiles` com CPF já cifrado no INSERT + endereço principal numa transação; desfaz no Auth com service role, com 1 nova tentativa, se o perfil falhar; repetir o cadastro de conta órfã (confirmada ou não) com a mesma senha conclui o perfil sem novo `/signup`, conferindo a senha no banco com pgcrypto; com outra senha é 409, inclusive quando o `/signup` de e-mail não confirmado devolve o usuário existente; envio duplicado simultâneo devolve 409 `email` sem apagar a conta que concluiu; se o Auth não responder, remove o usuário criado nesse meio-tempo antes do 503), `POST /api/auth/set-password`.
   - Checagem prévia de disponibilidade: `/api/auth/signup/check-alias` e `/api/auth/signup/check-cpf`.
+  - `address` é opcional no signup: sem ele, só o perfil é criado (o endereço fica para o primeiro checkout).
+  - Reenvio do link de confirmação: `POST /api/auth/signup/resend-confirmation` `{email}` → sempre 202 (não revela se a conta existe), 429 com `Retry-After` quando o Supabase limita.
+  - Login: e-mail não confirmado → 403 (não mais 401); conta do Auth sem perfil → 409 `email` pedindo para refazer o cadastro (antes tentava criar perfil sem CPF e dava 500); 429 repassado.
   - Erros mapeados: 400 (campos em snake_case, sempre com `fieldErrors`, inclusive CPF, alias, telefone, senha fraca e e-mail recusado pelo Supabase), 409 só para conflito real (e-mail/alias/CPF em uso, com o campo em `fieldErrors`), 429 (rate limit do Supabase, sempre com `Retry-After`: o do Supabase, o "after N seconds" da mensagem ou 600 s para e-mail / 60 s para requisições; header exposto no CORS), 500 (falha ao gravar o perfil que não é conflito), 502/503 (falha do provedor).
   - `POST /api/auth/register` está **deprecated** (substituído por `/signup`).
 - **Perfil do usuário (autenticado):** `GET/PUT /api/user_profiles/me`, `PUT /me/alias`, `PUT /me/document` (CPF criptografado com pgcrypto + hash).
@@ -14,7 +17,7 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
 - **Frete:** `POST /api/shipping/calculate` (Melhor Envio).
 - **Checkout de visitante:** `POST /api/checkout/express-guest` (Stripe + Melhor Envio).
 - **Segurança:** JWT do Supabase validado pelo `issuer-uri`, CORS por variável, chaves do Supabase validadas no boot.
-- **Testes:** 10 classes (signup, disponibilidade, cliente Supabase Auth, propriedades, segurança, mapeamento de entidades, contexto, contrato OpenAPI). `./mvnw -B test` em 2026-10-15: 53 testes, 0 falhas. `EntityMappingTests` confere que as colunas NOT NULL de `user_profiles` no Supabase também são obrigatórias na entidade (o H2 dos testes nasce da entidade).
+- **Testes:** 10 classes (signup, disponibilidade, cliente Supabase Auth, propriedades, segurança, mapeamento de entidades, contexto, contrato OpenAPI). `./mvnw -B test` em 2026-10-15: 64 testes, 0 falhas. `EntityMappingTests` confere que as colunas NOT NULL de `user_profiles` no Supabase também são obrigatórias na entidade (o H2 dos testes nasce da entidade).
 - **Contrato OpenAPI:** `/v3/api-docs` funciona (springdoc 2.7.0 com Boot 4.1.1), lista os 22 paths e respeita os nomes snake_case; coberto por `OpenApiDocsTests`.
 - **Deploy:** Railway via `Dockerfile` (branch `main`).
 

@@ -97,6 +97,13 @@ public class UserSignupService {
   }
 
   /**
+   * Reenvia o link de confirmação. A resposta é a mesma exista ou não a conta.
+   */
+  public void resendConfirmation(String rawEmail) {
+    supabaseAuthClient.resendSignupConfirmation(rawEmail.trim().toLowerCase(Locale.ROOT));
+  }
+
+  /**
    * Cria o usuário no Auth, ou reaproveita uma conta órfã (Auth sem perfil) de
    * um cadastro anterior. Em todos os casos o id só segue se a senha enviada
    * for a da conta: o /signup de um e-mail ainda não confirmado devolve o
@@ -263,6 +270,9 @@ public class UserSignupService {
     profile = userProfileRepository.saveAndFlush(profile);
 
     UserSignupRequestDTO.UserSignupAddressRequestDTO address = request.address();
+    if (address == null) {
+      return profile;
+    }
     userAddressRepository.save(UserAddressEntity.builder()
             .userProfile(profile)
             .street(address.addressLine1().trim())
