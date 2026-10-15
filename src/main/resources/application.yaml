@@ -95,6 +95,6 @@ app:
     service-role-key: ${SUPABASE_SERVICE_ROLE_KEY:}
     email-redirect-url: ${SUPABASE_EMAIL_REDIRECT_URL:}
   security:
-    pgcrypto-secret-key: ${PGCRYPTO_SECRET_KEY:myboxy_default_pgcrypto_secret_key_32bytes}
-    pgcryptoSecretKey: ${PGCRYPTO_SECRET_KEY:myboxy_default_pgcrypto_secret_key_32bytes}
-    jwt-secret: ${SUPABASE_JWT_SECRET:default_jwt_secret_key_myboxy_2026_dev}
+    # Sem valor padrão: sem a variável o boot falha, em vez de cifrar CPF com chave pública
+    pgcrypto-secret-key: ${PGCRYPTO_SECRET_KEY:}
+    jwt-secret: ${SUPABASE_JWT_SECRET:}

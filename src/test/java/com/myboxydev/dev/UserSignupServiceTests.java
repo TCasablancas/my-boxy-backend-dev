@@ -10,6 +10,7 @@ import com.myboxydev.dev.exception.AuthUnavailableException;
 import com.myboxydev.dev.exception.CpfAlreadyExistsException;
 import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
 import com.myboxydev.dev.exception.FieldConflictException;
+import com.myboxydev.dev.exception.FieldValidationException;
 import com.myboxydev.dev.repository.UserAddressRepository;
 import com.myboxydev.dev.repository.UserProfileRepository;
 import com.myboxydev.dev.service.SupabaseAuthClient;
@@ -68,6 +69,7 @@ class UserSignupServiceTests {
     when(userProfileRepository.findById(USER_ID)).thenReturn(Optional.empty());
     when(userProfileRepository.saveAndFlush(any(UserProfileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(userProfileRepository.encryptCpf(anyString(), anyString())).thenReturn(ENCRYPTED_CPF);
+    when(userProfileRepository.authPasswordMatches(any(), eq("s3nh@forte"))).thenReturn(true);
   }
 
   @Test
@@ -106,7 +108,7 @@ class UserSignupServiceTests {
   @Test
   void rejectsInvalidCpfBeforeCallingAuth() {
     assertThatThrownBy(() -> service.signup(request("ana", "111.111.111-11")))
-            .isInstanceOf(ResponseStatusException.class);
+            .isInstanceOfSatisfying(FieldValidationException.class, e -> assertThat(e.getField()).isEqualTo("cpf"));
     verify(supabaseAuthClient, never()).signUp(anyString(), anyString(), anyMap());
   }
 
@@ -161,7 +163,6 @@ class UserSignupServiceTests {
             .thenThrow(new EmailAlreadyInAuthException(SupabaseAuthClient.REASON_EMAIL_EXISTS));
     when(userProfileRepository.findAuthUserIdByEmail("ana@myboxy.com")).thenReturn(orphanId);
     when(userProfileRepository.findById(orphanId)).thenReturn(Optional.empty());
-    when(supabaseAuthClient.verifyPassword("ana@myboxy.com", "s3nh@forte")).thenReturn(orphanId);
 
     UserSignupResponseDTO response = service.signup(request("ana", VALID_CPF));
 
@@ -176,7 +177,7 @@ class UserSignupServiceTests {
     when(supabaseAuthClient.signUp(anyString(), anyString(), anyMap()))
             .thenThrow(new EmailAlreadyInAuthException(SupabaseAuthClient.REASON_EMPTY_IDENTITIES));
     when(userProfileRepository.findAuthUserIdByEmail("ana@myboxy.com")).thenReturn(orphanId);
-    when(supabaseAuthClient.verifyPassword(anyString(), anyString())).thenReturn(null);
+    when(userProfileRepository.authPasswordMatches(orphanId, "s3nh@forte")).thenReturn(false);
 
     assertThatThrownBy(() -> service.signup(request("ana", VALID_CPF)))
             .isInstanceOf(EmailAlreadyInAuthException.class)
@@ -193,7 +194,7 @@ class UserSignupServiceTests {
 
     assertThatThrownBy(() -> service.signup(request("ana", VALID_CPF)))
             .isInstanceOf(EmailAlreadyInAuthException.class);
-    verify(supabaseAuthClient, never()).verifyPassword(anyString(), anyString());
+    verify(userProfileRepository, never()).authPasswordMatches(any(), anyString());
   }
 
   @Test
@@ -219,6 +220,61 @@ class UserSignupServiceTests {
                     assertThat(e.getHeaders().getFirst(HttpHeaders.RETRY_AFTER)).isEqualTo("600"));
     verify(userProfileRepository, never()).saveAndFlush(any());
     verify(supabaseAuthClient, never()).deleteUser(any());
+  }
+
+  @Test
+  void orphanFromEarlierSignupIsResumedWithoutCallingSignupAgain() {
+    UUID orphanId = UUID.randomUUID();
+    when(userProfileRepository.findAuthUserIdByEmail("ana@myboxy.com")).thenReturn(orphanId);
+    when(userProfileRepository.findById(orphanId)).thenReturn(Optional.empty());
+
+    UserSignupResponseDTO response = service.signup(request("ana", VALID_CPF));
+
+    assertThat(response.id()).isEqualTo(orphanId);
+    // Novo /signup reenviaria o e-mail de confirmação e gastaria a cota
+    verify(supabaseAuthClient, never()).signUp(anyString(), anyString(), anyMap());
+  }
+
+  @Test
+  void unconfirmedOrphanWithAnotherPasswordCannotBeTakenOver() {
+    UUID orphanId = UUID.randomUUID();
+    when(userProfileRepository.findAuthUserIdByEmail("ana@myboxy.com")).thenReturn(orphanId);
+    when(userProfileRepository.authPasswordMatches(orphanId, "s3nh@forte")).thenReturn(false);
+
+    assertThatThrownBy(() -> service.signup(request("ana", VALID_CPF)))
+            .isInstanceOfSatisfying(EmailAlreadyInAuthException.class, e -> assertThat(e.getField()).isEqualTo("email"));
+    verify(supabaseAuthClient, never()).signUp(anyString(), anyString(), anyMap());
+    verify(userProfileRepository, never()).saveAndFlush(any());
+  }
+
+  @Test
+  void signupReturningAnExistingUserWithAnotherPasswordIsAConflict() {
+    // /signup de e-mail ainda não confirmado devolve o usuário que já existia
+    when(supabaseAuthClient.signUp(anyString(), anyString(), anyMap())).thenReturn(USER_ID);
+    when(userProfileRepository.authPasswordMatches(USER_ID, "s3nh@forte")).thenReturn(false);
+
+    assertThatThrownBy(() -> service.signup(request("ana", VALID_CPF)))
+            .isInstanceOf(EmailAlreadyInAuthException.class);
+    verify(userProfileRepository, never()).saveAndFlush(any());
+    verify(supabaseAuthClient, never()).deleteUser(any());
+  }
+
+  @Test
+  void concurrentDuplicateKeepsTheAccountThatFinishedFirst() {
+    when(supabaseAuthClient.signUp(anyString(), anyString(), anyMap())).thenReturn(USER_ID);
+    when(userProfileRepository.saveAndFlush(any(UserProfileEntity.class)))
+            .thenThrow(integrityViolation("23505", "user_profiles_alias_key"));
+    when(userProfileRepository.existsById(USER_ID)).thenReturn(true);
+
+    assertThatThrownBy(() -> service.signup(request("ana", VALID_CPF)))
+            .isInstanceOfSatisfying(EmailAlreadyInAuthException.class, e -> assertThat(e.getField()).isEqualTo("email"));
+    verify(supabaseAuthClient, never()).deleteUser(any());
+  }
+
+  @Test
+  void invalidAliasPointsToItsField() {
+    assertThatThrownBy(() -> service.signup(request("a!", VALID_CPF)))
+            .isInstanceOfSatisfying(FieldValidationException.class, e -> assertThat(e.getField()).isEqualTo("alias"));
   }
 
   private DataIntegrityViolationException integrityViolation(String sqlState, String constraint) {

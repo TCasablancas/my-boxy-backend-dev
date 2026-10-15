@@ -13,6 +13,7 @@ import com.myboxydev.dev.exception.BusinessRuleException;
 import com.myboxydev.dev.exception.CpfAlreadyExistsException;
 import com.myboxydev.dev.exception.EmailAlreadyInAuthException;
 import com.myboxydev.dev.exception.FieldConflictException;
+import com.myboxydev.dev.exception.FieldValidationException;
 import com.myboxydev.dev.repository.UserAddressRepository;
 import com.myboxydev.dev.repository.UserProfileRepository;
 import com.myboxydev.dev.util.CpfUtils;
@@ -45,6 +46,9 @@ import java.util.UUID;
 public class UserSignupService {
   private static final String ALIAS_PATTERN = "^[a-z0-9._-]{3,30}$";
   private static final String UNIQUE_VIOLATION = "23505";
+  static final String REASON_ORPHAN = "Auth: usuário sem perfil";
+  static final String REASON_OTHER_PASSWORD = "Auth: usuário existente com outra senha";
+  static final String REASON_DUPLICATE_SUBMIT = "envio duplicado";
 
   private final UserProfileRepository userProfileRepository;
   private final UserAddressRepository userAddressRepository;
@@ -59,7 +63,7 @@ public class UserSignupService {
     String phoneNumber = normalizePhoneNumber(request.phoneNumber());
 
     if (!CpfUtils.isValidCpf(request.cpf())) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O CPF informado é inválido");
+      throw new FieldValidationException("cpf", "O CPF informado é inválido");
     }
     String cleanCpf = CpfUtils.cleanCpf(request.cpf());
     String cpfHash = CpfUtils.calculateSha256Hash(cleanCpf);
@@ -83,43 +87,95 @@ public class UserSignupService {
               persistProfile(userId, request, email, fullName, alias, phoneNumber, cleanCpf, cpfHash));
       return toResponse(profile);
     } catch (RuntimeException exception) {
-      supabaseAuthClient.deleteUser(userId);
+      if (compensate(userId)) {
+        // Envio duplicado do mesmo cadastro (toque duplo, retry): a conta já está pronta
+        log.warn("Cadastro recusado (409) [envio duplicado] email={} authUserId={}", maskEmail(email), userId);
+        throw new EmailAlreadyInAuthException(REASON_DUPLICATE_SUBMIT);
+      }
       throw translatePersistenceFailure(exception, userId);
     }
   }
 
   /**
-   * Cria o usuário no Auth. Dois casos não são conflito de verdade:
-   * - o e-mail é de uma conta órfã (Auth sem perfil) e a senha confere: é a
-   *   mesma pessoa repetindo o cadastro, então ele continua com aquele id;
-   * - o Auth não respondeu a tempo: ele pode ter criado o usuário mesmo assim,
-   *   então o usuário recém-criado e sem perfil é removido antes do 503.
+   * Cria o usuário no Auth, ou reaproveita uma conta órfã (Auth sem perfil) de
+   * um cadastro anterior. Em todos os casos o id só segue se a senha enviada
+   * for a da conta: o /signup de um e-mail ainda não confirmado devolve o
+   * usuário que já existia, e sem essa conferência outra pessoa prenderia o
+   * próprio perfil (nome, CPF) ao e-mail alheio.
+   * Se o Auth não responder a tempo, ele pode ter criado o usuário mesmo assim,
+   * então o usuário recém-criado e sem perfil é removido antes do 503.
    */
   private UUID createAuthUser(String email, String password, String fullName, String alias) {
+    // Retomar sem novo /signup evita reenviar o e-mail (cota) e o limite de 60 s por usuário
+    UUID orphanId = findAuthUserId(email);
+    if (orphanId != null) {
+      return resumeOrphanSignup(orphanId, email, password, new EmailAlreadyInAuthException(REASON_ORPHAN));
+    }
+
+    UUID userId;
     try {
-      return supabaseAuthClient.signUp(email, password, Map.of("full_name", fullName, "alias", alias));
+      userId = supabaseAuthClient.signUp(email, password, Map.of("full_name", fullName, "alias", alias));
     } catch (EmailAlreadyInAuthException exception) {
-      return resumeOrphanSignup(email, password, exception);
+      return resumeOrphanSignup(findAuthUserId(email), email, password, exception);
     } catch (AuthUnavailableException exception) {
       removeUserCreatedDuringOutage(email);
       throw exception;
     }
+
+    if (!passwordMatches(userId, password)) {
+      log.warn("Cadastro recusado (409) [{}] email={} authUserId={}", REASON_OTHER_PASSWORD, maskEmail(email), userId);
+      throw new EmailAlreadyInAuthException(REASON_OTHER_PASSWORD);
+    }
+    return userId;
   }
 
-  private UUID resumeOrphanSignup(String email, String password, EmailAlreadyInAuthException conflict) {
-    UUID orphanId = findAuthUserId(email);
+  private UUID resumeOrphanSignup(UUID orphanId, String email, String password, EmailAlreadyInAuthException conflict) {
     if (orphanId == null || userProfileRepository.existsById(orphanId)) {
       log.warn("Cadastro recusado (409) [{}] email={} authUserId={}", conflict.getReason(), maskEmail(email), orphanId);
       throw conflict;
     }
-    // Só quem sabe a senha da conta órfã pode retomá-la; senão é conflito
-    if (!orphanId.equals(supabaseAuthClient.verifyPassword(email, password))) {
+    // Só quem sabe a senha da conta órfã pode retomá-la, confirmada ou não; senão é conflito
+    if (!passwordMatches(orphanId, password)) {
       log.warn("Cadastro recusado (409) [{}] email={}: conta órfã {} sem perfil, mas a senha não confere",
               conflict.getReason(), maskEmail(email), orphanId);
       throw conflict;
     }
     log.info("Cadastro retomado para a conta órfã {} (Auth sem perfil, senha confere).", orphanId);
     return orphanId;
+  }
+
+  /**
+   * Confere a senha contra o hash do Auth no próprio banco (pgcrypto), sem
+   * login: funciona com o e-mail ainda não confirmado e não gasta limite do
+   * Auth. Na dúvida (falha na consulta) a resposta é "não confere".
+   */
+  private boolean passwordMatches(UUID authUserId, String password) {
+    try {
+      return Boolean.TRUE.equals(userProfileRepository.authPasswordMatches(authUserId, password));
+    } catch (RuntimeException lookupFailure) {
+      log.warn("Não foi possível conferir a senha do usuário {} em auth.users: {}",
+              authUserId, lookupFailure.getClass().getSimpleName());
+      return false;
+    }
+  }
+
+  /**
+   * Desfaz o usuário do Auth quando o perfil não pôde ser gravado. Se o perfil
+   * já existe, outro envio simultâneo do mesmo cadastro concluiu primeiro com
+   * esse mesmo usuário: apagá-lo derrubaria a conta pronta.
+   *
+   * @return true se o perfil já existia (nada foi apagado)
+   */
+  private boolean compensate(UUID userId) {
+    try {
+      if (userProfileRepository.existsById(userId)) {
+        return true;
+      }
+    } catch (RuntimeException lookupFailure) {
+      log.warn("Não foi possível conferir o perfil do usuário {}: {}", userId, lookupFailure.getClass().getSimpleName());
+    }
+    supabaseAuthClient.deleteUser(userId);
+    return false;
   }
 
   private UUID findAuthUserId(String email) {
@@ -170,6 +226,8 @@ public class UserSignupService {
       if (name.contains("email")) return new EmailAlreadyInAuthException("unique " + constraint);
       if (name.contains("cpf")) return new CpfAlreadyExistsException();
       if (name.contains("alias")) return new FieldConflictException("alias", "Este alias já está em uso por outro usuário.");
+      // Mesmo usuário do Auth já com perfil: outro envio do mesmo cadastro chegou antes
+      if (name.contains("pkey")) return new EmailAlreadyInAuthException("unique " + constraint);
       return new BusinessRuleException("E-mail, alias ou CPF já cadastrado.");
     }
     log.error("Falha ao gravar o perfil {} [sqlState={} constraint={}]", userId, sqlState, constraint);
@@ -233,8 +291,8 @@ public class UserSignupService {
             .replaceFirst("^@", "")
             .toLowerCase(Locale.ROOT);
     if (!alias.matches(ALIAS_PATTERN)) {
-      throw new ResponseStatusException(
-              HttpStatus.BAD_REQUEST,
+      throw new FieldValidationException(
+              "alias",
               "O alias deve ter entre 3 e 30 caracteres e conter apenas letras, números, '.', '_' ou '-'"
       );
     }
@@ -253,7 +311,7 @@ public class UserSignupService {
     if ((digits.length() == 12 || digits.length() == 13) && digits.startsWith("55")) {
       return "+" + digits;
     }
-    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Telefone inválido. Informe DDD e número.");
+    throw new FieldValidationException("phone_number", "Telefone inválido. Informe DDD e número.");
   }
 
   private String blankToNull(String value) {
