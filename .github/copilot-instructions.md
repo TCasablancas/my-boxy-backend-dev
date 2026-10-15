@@ -1,23 +1,31 @@
-# Diretrizes de Backend e Segurança (Java Spring Boot 3.x)
+# Copilot — my-boxy-backend-dev (versão resumida de AGENTS.md)
 
-Você é um especialista sênior em Backend e Segurança. Sempre que o usuário iniciar uma mensagem com os gatilhos abaixo, execute a ação correspondente seguindo as regras deste documento.
+BFF Java do MyBoxy (marketplace artesanal) entre o app Flutter `my_boxy_flutter` e o Supabase (Postgres, Auth, Storage).
+Deploy no Railway via `Dockerfile` (branch `main`). Regras completas: `AGENTS.md`. Estado: `docs/STATUS.md`.
 
-## 🎯 Gatilhos de Comando (Tags)
-- `/criar-classe`: Use para gerar novos componentes, DTOs, Services ou Controllers do zero.
-- `/alterar-classe`: Use para refatorar, corrigir bugs ou adicionar funcionalidades a classes existentes.
-- `/investigar`: Use para debugar erros, rastrear fluxos de dados no repositório, propor soluções de arquitetura ou validar a viabilidade de novas ideias.
+## Stack e comandos
+- Java 21, Spring Boot 4.1.1, Maven (`./mvnw`), Spring Security + JWT do Supabase, Data JPA, Lombok, springdoc-openapi.
+- Testes: `./mvnw -B test` (H2 + perfil `test`, sem secrets). CI: `./mvnw -B verify`.
+- Pacotes em `com.myboxydev.dev`: `controllers`, `service`, `repository`, `model`/`domain`, `dto`, `exception`, `config`.
 
-## 🛡️ Diretrizes Obrigatórias para Criação/Alteração
-1. **Segurança (Spring Security & OWASP):** Valide sempre os dados de entrada (`@Valid`). Garanta controle de acesso granular com `@PreAuthorize`. Nunca exponha entidades de banco diretamente na API; use Records como DTOs.
-2. **Padrões Java & Spring:** Use Java 17+, injeção por construtor (`@RequiredArgsConstructor` do Lombok) e tratamento global de exceções.
-3. **Performance:** Utilize `@Transactional(readOnly = true)` em consultas e garanta a idempotência dos verbos HTTP.
+## Gatilhos
+- `/criar-classe`: criar DTO, Service, Controller etc. seguindo as convenções abaixo.
+- `/alterar-classe`: refatorar ou corrigir mantendo compatibilidade com o app.
+- `/investigar`: diagnóstico com evidência (Causa raiz -> Impacto -> 2 soluções com prós/contras).
 
-## 🔍 Diretrizes para Investigação e Debug (/investigar)
-Quando este comando for acionado, você deve adotar uma postura analítica e consultiva:
-1. **Mapeamento de Contexto:** Vasculhe o repositório para entender onde a dúvida ou bug se encaixa. Identifique classes correlacionadas, configurações do Spring (como SecurityConfig, ExceptionHandlers) e dependências (`pom.xml` / `build.gradle`).
-2. **Diagnóstico Baseado em Evidências:** Ao analisar logs de erro ou comportamentos inesperados, aponte a linha exata ou a configuração que está gerando a falha (ex: falta de um Bean, problema de escopo transacional, concorrência).
-3. **Proposta de Soluções Viáveis:** Para dúvidas ou novas ideias, apresente pelo menos duas abordagens técnicas que façam sentido para a arquitetura atual deste BFF, pesando prós e contras de cada uma (focando em complexidade e impacto de segurança).
+## Convenções
+- DTOs como `record`; nunca expor entidade JPA. `@Valid` em toda entrada.
+- Injeção por construtor (`@RequiredArgsConstructor`). Erros via exceções de `exception/` + `GlobalExceptionHandler`.
+- Usuário logado só via `jwt.getSubject()`; nunca confiar em id do body/URL.
+- Rota nova declarada explicitamente no `SecurityConfig` (pública ou autenticada).
+- `@Transactional(readOnly = true)` em leituras. Endpoint novo/alterado ganha teste.
+- Comentários e mensagens em português; explicar decisões em linguagem simples.
 
-## 📝 Formato de Resposta Esperado
-- Para alterações/criações: Apresente apenas o código modificado/criado com breves justificativas de segurança.
-- Para investigações: Apresente um diagnóstico estruturado (Causa Raiz -> Impacto -> Soluções Recomendadas).
+## NÃO FAZER
+- Tocar em outros repositórios.
+- Editar migrations/SQL já aplicados ou mudar `ddl-auto` de `none`.
+- Rodar SQL direto em produção.
+- Expor `SUPABASE_SERVICE_ROLE_KEY` (resposta, log, app, teste).
+- Commitar secrets: valores reais só nas variáveis do Railway; `.env` fora do git.
+- Alterar endpoints existentes sem manter compatibilidade com o app.
+- Trocar `PGCRYPTO_SECRET_KEY` ou logar CPF.
