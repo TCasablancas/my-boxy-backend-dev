@@ -17,6 +17,8 @@ public interface UserAddressRepository extends JpaRepository<UserAddressEntity, 
 
   Optional<UserAddressEntity> findByIdAndUserProfileId(UUID id, UUID userId);
 
+  Optional<UserAddressEntity> findFirstByUserProfileIdAndIsPrimaryTrue(UUID userId);
+
   // Remove a flag de endereço principal de todos os endereços do usuário antes de definir um novo
   @Modifying
   @Query(
