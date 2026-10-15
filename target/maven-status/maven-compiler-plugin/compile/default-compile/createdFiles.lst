@@ -18,12 +18,14 @@ com/myboxydev/dev/exception/AuthUnavailableException.class
 com/myboxydev/dev/model/SubcategoryModel.class
 com/myboxydev/dev/dto/MenuItemDTO.class
 com/myboxydev/dev/service/MelhorEnvioService$MelhorEnvioQuote.class
+com/myboxydev/dev/exception/FieldValidationException.class
 com/myboxydev/dev/service/SignupAvailabilityService.class
 com/myboxydev/dev/dto/CategorySimpleDTO.class
 com/myboxydev/dev/model/MenuItemModel.class
 com/myboxydev/dev/dto/UserSignupResponseDTO.class
 com/myboxydev/dev/dto/RegisterRequestDTO.class
 com/myboxydev/dev/dto/AuthResponseDTO.class
+com/myboxydev/dev/service/AuthService$LoginRejectedException.class
 com/myboxydev/dev/dto/SellerSummaryDTO.class
 com/myboxydev/dev/service/StripePaymentService.class
 com/myboxydev/dev/controllers/UserAddressController.class
@@ -76,9 +78,11 @@ com/myboxydev/dev/dto/response/ApiErrorResponseDTO$FieldErrorDTO.class
 com/myboxydev/dev/dto/SignupAvailabilityResponseDTO.class
 com/myboxydev/dev/controllers/GuestCheckoutController.class
 com/myboxydev/dev/domain/entity/UserProfileEntity$UserProfileEntityBuilder.class
+com/myboxydev/dev/dto/SignupResendConfirmationRequestDTO.class
 com/myboxydev/dev/service/AuthService.class
 com/myboxydev/dev/controllers/ShippingController.class
 com/myboxydev/dev/repository/SubcategoryRepository.class
+com/myboxydev/dev/exception/EmailNotConfirmedException.class
 com/myboxydev/dev/model/OrderModel.class
 com/myboxydev/dev/dto/ExpressGuestCheckoutRequestDTO.class
 com/myboxydev/dev/service/UserAddressService.class

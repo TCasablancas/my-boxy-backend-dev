@@ -2,6 +2,7 @@ com/myboxydev/dev/UserSignupServiceTests.class
 com/myboxydev/dev/SupabasePropertiesTests.class
 com/myboxydev/dev/SignupAvailabilityControllerTests.class
 com/myboxydev/dev/SupabasePropertiesTests$Config.class
+com/myboxydev/dev/AuthServiceLoginTests.class
 com/myboxydev/dev/SecurityConfigTests.class
 com/myboxydev/dev/SignupAvailabilityServiceTests.class
 com/myboxydev/dev/SupabaseAuthClientTests.class

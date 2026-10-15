@@ -39,6 +39,7 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/SignupAliasCheckRequestDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/SignupAvailabilityResponseDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/SignupCpfCheckRequestDTO.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/SignupResendConfirmationRequestDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/StoreDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/StoreSimpleDTO.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/dto/SubcategoryDTO.java
@@ -56,7 +57,9 @@
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/BusinessRuleException.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/CpfAlreadyExistsException.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/EmailAlreadyInAuthException.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/EmailNotConfirmedException.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/FieldConflictException.java
+/Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/FieldValidationException.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/GlobalExceptionHandler.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/exception/ResourceNotFoundException.java
 /Volumes/thiagoHD/Projects/my-boxy-backend-dev/src/main/java/com/myboxydev/dev/mapper/UserProfileMapper.java
