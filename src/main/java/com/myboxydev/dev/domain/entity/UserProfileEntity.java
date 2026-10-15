@@ -29,11 +29,16 @@ public class UserProfileEntity {
   @Column(name = "alias", nullable = false, unique = true, length = 50)
   private String alias;
 
-  @Column(name = "cpf_encrypted", columnDefinition = "TEXT")
+  // NOT NULL no Supabase: o cadastro grava o CPF já cifrado no próprio INSERT
+  @Column(name = "cpf_encrypted", nullable = false, columnDefinition = "TEXT")
   private String cpfEncrypted;
 
-  @Column(name = "cpf_hash", unique = true, length = 64)
+  @Column(name = "cpf_hash", nullable = false, unique = true, length = 64)
   private String cpfHash;
+
+  @Column(name = "has_cpf_registered", nullable = false)
+  @Builder.Default
+  private Boolean hasCpfRegistered = false;
 
   @Column(name = "email", nullable = false, unique = true, length = 255)
   private String email;

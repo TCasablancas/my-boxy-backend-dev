@@ -1,7 +1,7 @@
 package com.myboxydev.dev.exception;
 
-public class CpfAlreadyExistsException extends RuntimeException {
+public class CpfAlreadyExistsException extends FieldConflictException {
     public CpfAlreadyExistsException() {
-        super("Este CPF já está associado a outra conta cadastrada.");
+        super("cpf", "Este CPF já está associado a outra conta cadastrada.");
     }
 }

@@ -71,6 +71,13 @@ spring:
 server:
   port: ${PORT:8080}
 
+logging:
+  level:
+    # O WARN de erro SQL do Hibernate imprime a linha recusada ("Failing row contains"),
+    # com e-mail, telefone e hash do CPF. Os serviços logam só código e constraint.
+    org.hibernate.orm.jdbc.error: ERROR
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: ERROR
+
 # Bloco customizado da MyBoxy para segurança e pgcrypto (Evita o crash de binding no Railway)
 app:
   integrations:

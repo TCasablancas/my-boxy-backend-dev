@@ -32,7 +32,21 @@ public class GlobalExceptionHandler {
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
   }
 
-  @ExceptionHandler({AliasAlreadyExistsException.class, CpfAlreadyExistsException.class, BusinessRuleException.class})
+  @ExceptionHandler(FieldConflictException.class)
+  public ResponseEntity<ApiErrorResponseDTO> handleFieldConflict(FieldConflictException ex, HttpServletRequest request) {
+    // O campo vai em fieldErrors para o app marcar o campo certo do formulário
+    ApiErrorResponseDTO error = new ApiErrorResponseDTO(
+      HttpStatus.CONFLICT.value(),
+      "Conflict / Business Rule Violation",
+      ex.getMessage(),
+      request.getRequestURI(),
+      OffsetDateTime.now(),
+      List.of(new ApiErrorResponseDTO.FieldErrorDTO(ex.getField(), ex.getMessage()))
+    );
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+  }
+
+  @ExceptionHandler(BusinessRuleException.class)
   public ResponseEntity<ApiErrorResponseDTO> handleBusinessRule(RuntimeException ex, HttpServletRequest request) {
     ApiErrorResponseDTO error = new ApiErrorResponseDTO(
       HttpStatus.CONFLICT.value(),
