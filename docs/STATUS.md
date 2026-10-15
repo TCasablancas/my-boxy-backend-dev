@@ -1,6 +1,6 @@
 # Status do projeto
 
-Última atualização: 2026-10-15 (endurecimento do cadastro: órfão, envio duplicado, erros por campo).
+Última atualização: 2026-10-15 (set-primary com JWT; home: header e banners).
 Agentes: atualizem este arquivo ao terminar uma tarefa.
 
 ## Feito
@@ -32,6 +32,7 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
 - Área do vendedor (`/api/seller/**` está protegida no `SecurityConfig`, mas ainda não há controller) e checkout autenticado (`/api/checkout/**`).
 
 ## Pontos de atenção (encontrados no levantamento, ainda não corrigidos)
+- Corrigido em `fix/address-set-primary-jwt`: `PUT /api/v1/me/addresses/{id}/set-primary` lia o usuário do header `X-User-Id`; agora usa o JWT e responde 404 para endereço de outro usuário.
 - `AuthService.login` cria um perfil padrão sem CPF quando o usuário do Auth não tem perfil; com `cpf_encrypted`/`cpf_hash` NOT NULL esse insert falha. O mesmo vale para o `register` (deprecated).
 - Dev e prod usam o mesmo projeto Supabase: testes de cadastro gastam a cota de e-mail de usuários reais.
 - `PGCRYPTO_SECRET_KEY` e `SUPABASE_JWT_SECRET` não têm mais valor padrão no `application.yaml`: sem a variável o boot falha. Conferir no Railway antes do deploy (trocar a chave invalida os CPFs já cifrados).
