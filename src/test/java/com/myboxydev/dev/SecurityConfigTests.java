@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -33,6 +34,29 @@ class SecurityConfigTests {
   void rejectsPrivateEndpointWithoutBearerToken() throws Exception {
     mockMvc.perform(get("/api/user_profiles/me"))
             .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void unauthorizedUsesStandardErrorBody() throws Exception {
+    mockMvc.perform(get("/api/v1/me/addresses"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.status").value(401))
+            .andExpect(jsonPath("$.path").value("/api/v1/me/addresses"));
+  }
+
+  @Test
+  void invalidTokenOnPrivateEndpointIsUnauthorizedWithBody() throws Exception {
+    mockMvc.perform(get("/api/user_profiles/me")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer token-invalido"))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.status").value(401));
+  }
+
+  @Test
+  void invalidTokenOnPublicCatalogIsIgnored() throws Exception {
+    mockMvc.perform(get("/api/products")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer token-vencido"))
+            .andExpect(status().isOk());
   }
 
   @Test
