@@ -11,10 +11,6 @@ import com.myboxydev.dev.model.UserAddressModel;
 import com.myboxydev.dev.repository.UserAddressRepository;
 import com.myboxydev.dev.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Point;
-import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +22,6 @@ import java.util.UUID;
 public class UserAddressService {
   private final UserAddressRepository addressRepository;
   private final UserProfileRepository userProfileRepository;
-  private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
   @Transactional(readOnly = true)
   public List<AddressResponseDTO> getUserAddresses(UUID userId) {
@@ -45,12 +40,6 @@ public class UserAddressService {
       addressRepository.clearPrimaryAddressesForUser(userId);
     }
 
-    Point locationPoint = null;
-    if (request.latitude() != null && request.longitude() != null) {
-      // Nota PostGIS: Longitude (X), Latitude (Y)
-      locationPoint = geometryFactory.createPoint(new Coordinate(request.longitude(), request.latitude()));
-    }
-
     UserAddressEntity address = UserAddressEntity.builder()
             .userProfile(user)
             .title(request.title())
@@ -63,7 +52,6 @@ public class UserAddressService {
             .postalCode(request.postalCode())
             .isPrimary(Boolean.TRUE.equals(request.isPrimary()))
             .addressType(AddressType.valueOf(request.addressType()))
-            .location(locationPoint)
             .build();
 
     addressRepository.save(address);
@@ -90,9 +78,6 @@ public class UserAddressService {
   }
 
   private AddressResponseDTO toResponseDTO(UserAddressEntity entity) {
-    Double lat = entity.getLocation() != null ? entity.getLocation().getY() : null;
-    Double lng = entity.getLocation() != null ? entity.getLocation().getX() : null;
-
     return new AddressResponseDTO(
             entity.getId(),
             entity.getTitle(),
@@ -104,9 +89,7 @@ public class UserAddressService {
             entity.getState(),
             entity.getPostalCode(),
             entity.getIsPrimary(),
-            entity.getAddressType().name(),
-            lat,
-            lng
+            entity.getAddressType().name()
     );
   }
 
