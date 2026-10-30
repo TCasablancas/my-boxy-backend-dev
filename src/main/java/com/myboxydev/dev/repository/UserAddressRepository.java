@@ -27,15 +27,4 @@ public interface UserAddressRepository extends JpaRepository<UserAddressEntity, 
   void clearPrimaryAddressesForUser(
     @Param("userId") UUID userId
   );
-
-  // Consulta espacial PostGIS: Verifica se dois endereços estão dentro de uma distância máxima em metros (Handshake/Geofencing)
-  @Query(
-    value = "SELECT ST_DWithin(a1.location, a2.location, :distanceInMeters) " +
-            "FROM public.user_addresses a1, public.user_addresses a2 " +
-            "WHERE a1.id = :buyerAddressId AND a2.id = :sellerAddressId", nativeQuery = true
-  )
-  Boolean isWithinHandshakeRadius(
-    @Param("buyerAddressId") UUID buyerAddressId,
-    @Param("sellerAddressId") UUID sellerAddressId,
-    @Param("distanceInMeters") double distanceInMeters);
 }

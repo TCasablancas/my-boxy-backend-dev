@@ -13,7 +13,5 @@ public record AddressResponseDTO(
   String state,
   String postalCode,
   Boolean isPrimary,
-  String addressType,
-  Double latitude,
-  Double longitude
+  String addressType
 ) {}

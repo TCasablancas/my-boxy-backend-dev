@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.locationtech.jts.geom.Point;
 
 import java.awt.*;
 import java.time.OffsetDateTime;
@@ -61,10 +60,6 @@ public class UserAddressEntity {
   @Column(name = "address_type", nullable = false, length = 20)
   @Builder.Default
   private AddressType addressType = AddressType.DELIVERY;
-
-  // Ponto geométrico PostGIS (SRID 4326 - WGS84)
-  @Column(name = "location", columnDefinition = "GEOGRAPHY(Point, 4326)")
-  private Point location;
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)

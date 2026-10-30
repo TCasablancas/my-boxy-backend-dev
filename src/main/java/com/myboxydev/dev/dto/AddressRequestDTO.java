@@ -16,7 +16,5 @@ public record AddressRequestDTO(
   @NotBlank
   @Pattern(regexp = "^\\d{5}-?\\d{3}$") String postalCode,
   Boolean isPrimary,
-  String addressType, // DELIVERY, SELLER_ORIGIN, BOTH
-  Double latitude,
-  Double longitude
+  String addressType // DELIVERY, SELLER_ORIGIN, BOTH
 ) {}
