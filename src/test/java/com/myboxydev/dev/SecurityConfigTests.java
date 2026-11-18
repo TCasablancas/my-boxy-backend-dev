@@ -28,6 +28,8 @@ class SecurityConfigTests {
   void permitsPublicCatalogEndpoints() throws Exception {
     mockMvc.perform(get("/api/products"))
             .andExpect(status().isOk());
+    mockMvc.perform(get("/api/stores"))
+            .andExpect(status().isOk());
   }
 
   @Test
