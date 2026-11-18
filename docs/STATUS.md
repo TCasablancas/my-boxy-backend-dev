@@ -1,6 +1,6 @@
 # Status do projeto
 
-Última atualização: 2026-10-15 (set-primary com JWT; home: header e banners).
+Última atualização: 2026-11-18 (avaliações de produto: resumo por nota e lista paginada).
 Agentes: atualizem este arquivo ao terminar uma tarefa.
 
 ## Feito
@@ -15,12 +15,15 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
   - Login: e-mail não confirmado → 403 (não mais 401); conta do Auth sem perfil → 409 `email` pedindo para refazer o cadastro (antes tentava criar perfil sem CPF e dava 500); 429 repassado.
   - Erros mapeados: 400 (campos em snake_case, sempre com `fieldErrors`, inclusive CPF, alias, telefone, senha fraca e e-mail recusado pelo Supabase), 409 só para conflito real (e-mail/alias/CPF em uso, com o campo em `fieldErrors`), 429 (rate limit do Supabase, sempre com `Retry-After`: o do Supabase, o "after N seconds" da mensagem ou 600 s para e-mail / 60 s para requisições; header exposto no CORS), 500 (falha ao gravar o perfil que não é conflito), 502/503 (falha do provedor).
   - `POST /api/auth/register` está **deprecated** (substituído por `/signup`).
+- **Avaliações de produto (ADR-0003, branch `feat/product-reviews`):** `GET /api/v1/products/{productId}/reviews/summary` (média, total e 5 barras de 5 a 1) e `GET /api/v1/products/{productId}/reviews?ratings=5,4&cursor=&limit=` (lista infinita por cursor `created_at`+`id`, mais recentes primeiro; 400 com `fieldErrors` para `ratings`/`cursor`/`limit`; 404 sem produto). Públicas, `max-age=60`. Autor sai como "Ana S." (anonimizado: "Usuário MyBoxy"), sem id/e-mail. `ReviewService` já atende loja (`ReviewTarget.STORE`), falta só o controller.
+  - Tabelas `reviews`, `review_photos`, `review_likes`: migration `supabase/migrations/20261118120000_reviews.sql` (**aplicar à mão** antes do deploy, senão as rotas respondem 500; testada num Postgres 16 local).
+  - Fase 2: criar/editar avaliação, curtir, upload de fotos (bucket `review-photos`), curtidas do usuário logado, rotas da loja. `products.reviews` e `stores.rating` ainda não são derivados de `reviews`.
 - **Perfil do usuário (autenticado):** `GET/PUT /api/user_profiles/me`, `PUT /me/alias`, `PUT /me/document` (CPF criptografado com pgcrypto + hash).
 - **Endereços (autenticado):** `GET/POST /api/v1/me/addresses`, `DELETE /{addressId}`, `PUT /{addressId}/set-primary`.
 - **Frete:** `POST /api/shipping/calculate` (Melhor Envio).
 - **Checkout de visitante:** `POST /api/checkout/express-guest` (Stripe + Melhor Envio).
 - **Segurança:** JWT do Supabase validado pelo `issuer-uri`, CORS por variável, chaves do Supabase validadas no boot.
-- **Testes:** 10 classes (signup, disponibilidade, cliente Supabase Auth, propriedades, segurança, mapeamento de entidades, contexto, contrato OpenAPI). `./mvnw -B test` em 2026-10-15: 82 testes, 0 falhas. `EntityMappingTests` confere que as colunas NOT NULL de `user_profiles` no Supabase também são obrigatórias na entidade (o H2 dos testes nasce da entidade).
+- **Testes:** 10 classes (signup, disponibilidade, cliente Supabase Auth, propriedades, segurança, mapeamento de entidades, contexto, contrato OpenAPI). `./mvnw -B test` em 2026-11-18: 101 testes, 0 falhas. `EntityMappingTests` confere que as colunas NOT NULL de `user_profiles` no Supabase também são obrigatórias na entidade (o H2 dos testes nasce da entidade).
 - **Contrato OpenAPI:** `/v3/api-docs` funciona (springdoc 2.7.0 com Boot 4.1.1), lista os 22 paths e respeita os nomes snake_case; coberto por `OpenApiDocsTests`.
 - **Deploy:** Railway via `Dockerfile` (branch `main`).
 

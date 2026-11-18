@@ -29,6 +29,20 @@ class OpenApiDocsTests {
   }
 
   @Test
+  void documentsReviewEndpoints() throws Exception {
+    mockMvc.perform(get("/v3/api-docs"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.paths['/api/v1/products/{productId}/reviews/summary'].get.operationId")
+                    .value("getProductReviewSummary"))
+            .andExpect(jsonPath("$.paths['/api/v1/products/{productId}/reviews'].get.operationId")
+                    .value("listProductReviews"))
+            .andExpect(jsonPath("$.components.schemas.ReviewSummaryDTO.properties.average_rating").exists())
+            .andExpect(jsonPath("$.components.schemas.ReviewPageDTO.properties.next_cursor").exists())
+            .andExpect(jsonPath("$.components.schemas.ReviewDTO.properties.photos_count").exists())
+            .andExpect(jsonPath("$.components.schemas.Author.properties.display_name").exists());
+  }
+
+  @Test
   void documentsHomeEndpointsAndBearerScheme() throws Exception {
     mockMvc.perform(get("/v3/api-docs"))
             .andExpect(status().isOk())
