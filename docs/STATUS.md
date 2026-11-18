@@ -4,7 +4,7 @@
 Agentes: atualizem este arquivo ao terminar uma tarefa.
 
 ## Feito
-- **Catálogo público:** produtos (`GET /api/products`, `/{id}`, `/{id}/related`, filtros via `ProductSpecifications`), lojas (`/api/stores`), categorias (`/api/categories`), menu (`/api/menu`).
+- **Catálogo público:** produtos (`GET /api/products`, `/{id}`, `/{id}/related`, filtros via `ProductSpecifications`; respostas incluem estoque, favoritos, vendas, desconto, avaliações e detalhes opcionais), lojas (`/api/stores`), categorias (`/api/categories`), menu (`/api/menu`).
 - **Auth via BFF (Supabase Auth):** `POST /api/auth/login`, `POST /api/auth/signup` (cria usuário no Auth + `user_profiles` com CPF já cifrado no INSERT + endereço principal numa transação; desfaz no Auth com service role, com 1 nova tentativa, se o perfil falhar; repetir o cadastro de conta órfã (confirmada ou não) com a mesma senha conclui o perfil sem novo `/signup`, conferindo a senha no banco com pgcrypto; com outra senha é 409, inclusive quando o `/signup` de e-mail não confirmado devolve o usuário existente; envio duplicado simultâneo devolve 409 `email` sem apagar a conta que concluiu; se o Auth não responder, remove o usuário criado nesse meio-tempo antes do 503), `POST /api/auth/set-password`.
   - Checagem prévia de disponibilidade: `/api/auth/signup/check-alias` e `/api/auth/signup/check-cpf`.
   - `address` é opcional no signup: sem ele, só o perfil é criado (o endereço fica para o primeiro checkout).

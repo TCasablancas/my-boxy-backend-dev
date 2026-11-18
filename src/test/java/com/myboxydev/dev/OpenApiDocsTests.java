@@ -37,6 +37,13 @@ class OpenApiDocsTests {
             .andExpect(jsonPath("$.paths['/api/v1/me/home-header'].get.security[0].bearerAuth").exists())
             .andExpect(jsonPath("$.components.schemas.HomeBannerDTO.properties.image_url").exists())
             .andExpect(jsonPath("$.components.schemas.HomeHeaderDTO.properties.display_name").exists())
+            .andExpect(jsonPath("$.components.schemas.ProductDTO.properties.isFavorite").exists())
+            .andExpect(jsonPath("$.components.schemas.ProductDTO.properties.inStock").exists())
+            .andExpect(jsonPath("$.components.schemas.ProductDTO.properties.numSells").exists())
+            .andExpect(jsonPath("$.components.schemas.ProductDTO.properties.discount").exists())
+            .andExpect(jsonPath("$.components.schemas.ProductDTO.properties.reviews").exists())
+            .andExpect(jsonPath("$.components.schemas.ProductDTO.properties.weight").exists())
+            .andExpect(jsonPath("$.components.schemas.ProductDTO.properties.observations").exists())
             .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"));
   }
 }
