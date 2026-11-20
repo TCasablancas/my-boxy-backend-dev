@@ -1,13 +1,16 @@
 package com.myboxydev.dev.controllers;
 
+import com.myboxydev.dev.domain.enums.ProductMediaType;
 import com.myboxydev.dev.dto.ProductCardDTO;
 import com.myboxydev.dev.dto.ProductDTO;
+import com.myboxydev.dev.dto.ProductMediaDTO;
 import com.myboxydev.dev.dto.StoreSimpleDTO;
 import com.myboxydev.dev.dto.SubcategoryDTO;
 import com.myboxydev.dev.model.ProductModel;
+import com.myboxydev.dev.repository.ProductMediaRepository;
 import com.myboxydev.dev.repository.ProductRepository;
 import com.myboxydev.dev.specification.ProductSpecifications;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,9 +21,10 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
+@RequiredArgsConstructor
 public class ProductController {
-  @Autowired
-  private ProductRepository productRepository;
+  private final ProductRepository productRepository;
+  private final ProductMediaRepository productMediaRepository;
 
   // Home / Listagem / Busca / Navegação por categoria — tudo no mesmo endpoint,
   // já que os filtros são opcionais e combináveis.
@@ -87,7 +91,8 @@ public class ProductController {
                       product.getMaterial(),
                       product.getObservations(),
                       storeDTO,
-                      subcategoryDTO
+                      subcategoryDTO,
+                      toMediaDTOs(product)
               );
               return ResponseEntity.ok(detailDTO);
             })
@@ -107,6 +112,18 @@ public class ProductController {
               return ResponseEntity.ok(related);
             })
             .orElse(ResponseEntity.notFound().build());
+  }
+
+  // Galeria do carrossel. Produto ainda sem linhas em product_media usa a main_image
+  // como única imagem, para o app sempre ter algo para mostrar.
+  private List<ProductMediaDTO> toMediaDTOs(ProductModel product) {
+    List<ProductMediaDTO> media = productMediaRepository.findByProductIdOrderByPositionAsc(product.getId()).stream()
+            .map(m -> new ProductMediaDTO(m.getMediaType(), m.getUrl(), m.getThumbnailUrl()))
+            .toList();
+    if (media.isEmpty() && product.getMainImage() != null && !product.getMainImage().isBlank()) {
+      return List.of(new ProductMediaDTO(ProductMediaType.IMAGE, product.getMainImage(), null));
+    }
+    return media;
   }
 
   private ProductCardDTO toCardDTO(ProductModel product) {
