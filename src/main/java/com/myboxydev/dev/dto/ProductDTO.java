@@ -11,6 +11,7 @@ public record ProductDTO(
     BigDecimal price,
     String mainImage,
     Boolean isFavorite,
+    Boolean isCustom,
     Boolean inStock,
     Integer numSells,
     BigDecimal discount,

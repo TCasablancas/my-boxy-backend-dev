@@ -26,6 +26,10 @@ public class ProductModel {
     @Column(name = "is_favorite", nullable = false)
     private Boolean isFavorite;
 
+    // Produto customizável (personalizado sob encomenda).
+    @Column(name = "is_custom", nullable = false)
+    private Boolean isCustom = false;
+
     @Column(name = "in_stock", nullable = false)
     private Boolean inStock;
 
@@ -70,6 +74,8 @@ public class ProductModel {
     public void setMainImage(String mainImage) { this.mainImage = mainImage; }
     public Boolean getIsFavorite() { return isFavorite; }
     public void setIsFavorite(Boolean favorite) { isFavorite = favorite; }
+    public Boolean getIsCustom() { return isCustom; }
+    public void setIsCustom(Boolean isCustom) { this.isCustom = isCustom; }
     public Boolean getInStock() { return inStock; }
     public void setInStock(Boolean inStock) { this.inStock = inStock; }
     public Integer getNumSells() { return numSells; }

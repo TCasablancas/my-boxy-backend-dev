@@ -9,6 +9,7 @@ public record ProductCardDTO(
     BigDecimal price,
     String mainImage,
     Boolean isFavorite,
+    Boolean isCustom,
     Boolean inStock,
     Integer numSells,
     BigDecimal discount,

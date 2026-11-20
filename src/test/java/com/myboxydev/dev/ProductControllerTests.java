@@ -65,7 +65,23 @@ class ProductControllerTests {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.media.length()").value(1))
             .andExpect(jsonPath("$.media[0].type").value("IMAGE"))
-            .andExpect(jsonPath("$.media[0].url").value("https://cdn.test/capa.webp"));
+            .andExpect(jsonPath("$.media[0].url").value("https://cdn.test/capa.webp"))
+            .andExpect(jsonPath("$.isCustom").value(false));
+  }
+
+  @Test
+  void detailAndRelatedReturnIsCustom() throws Exception {
+    ProductModel custom = product();
+    custom.setIsCustom(true);
+    when(productRepository.findById(productId)).thenReturn(Optional.of(custom));
+    when(productRepository.findByStoreIdAndIdNot(custom.getStore().getId(), productId)).thenReturn(List.of(custom));
+
+    mockMvc.perform(get("/api/products/{id}", productId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.isCustom").value(true));
+    mockMvc.perform(get("/api/products/{id}/related", productId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].isCustom").value(true));
   }
 
   @Test
