@@ -1,6 +1,7 @@
 package com.myboxydev.dev.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public record ProductDTO(
@@ -23,5 +24,7 @@ public record ProductDTO(
     String material,
     String observations,
     StoreSimpleDTO store,
-    SubcategoryDTO subcategory
+    SubcategoryDTO subcategory,
+    // Galeria do carrossel, já em ordem. Nunca vazia se houver mainImage.
+    List<ProductMediaDTO> media
 ) {}
