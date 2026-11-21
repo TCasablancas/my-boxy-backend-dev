@@ -62,6 +62,7 @@ class UserSignupServiceTests {
 
     AppSecurityProperties properties = new AppSecurityProperties();
     properties.setPgcryptoSecretKey("secret");
+    properties.setCpfHashPepper("pepper");
 
     service = new UserSignupService(
             userProfileRepository, userAddressRepository, supabaseAuthClient, properties, transactionTemplate);
@@ -70,6 +71,17 @@ class UserSignupServiceTests {
     when(userProfileRepository.saveAndFlush(any(UserProfileEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(userProfileRepository.encryptCpf(anyString(), anyString())).thenReturn(ENCRYPTED_CPF);
     when(userProfileRepository.authPasswordMatches(any(), eq("s3nh@forte"))).thenReturn(true);
+  }
+
+  @Test
+  void testUserIsCreatedConfirmedThroughAdminApiWithoutSignupEmail() {
+    when(supabaseAuthClient.adminCreateConfirmedUser(eq("ana@myboxy.com"), eq("s3nh@forte"), anyMap())).thenReturn(USER_ID);
+
+    UserSignupResponseDTO response = service.signupConfirmedTestUser(request("ana.souza", VALID_CPF));
+
+    assertThat(response.id()).isEqualTo(USER_ID);
+    verify(supabaseAuthClient, never()).signUp(anyString(), anyString(), anyMap());
+    verify(userProfileRepository).encryptCpf("52998224725", "secret");
   }
 
   @Test
@@ -90,7 +102,7 @@ class UserSignupServiceTests {
     ArgumentCaptor<UserProfileEntity> profile = ArgumentCaptor.forClass(UserProfileEntity.class);
     verify(userProfileRepository).saveAndFlush(profile.capture());
     assertThat(profile.getValue().getCpfEncrypted()).isEqualTo(ENCRYPTED_CPF);
-    assertThat(profile.getValue().getCpfHash()).isEqualTo(CpfUtils.calculateSha256Hash("52998224725"));
+    assertThat(profile.getValue().getCpfHash()).isEqualTo(CpfUtils.hashCpf("52998224725", "pepper"));
     assertThat(profile.getValue().getHasCpfRegistered()).isTrue();
     verify(userProfileRepository).encryptCpf("52998224725", "secret");
     verify(userProfileRepository, never()).updateCpfEncryptedAndHash(any(), any(), any(), any());

@@ -141,6 +141,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/shipping/calculate").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/checkout/express-guest").permitAll()
+                    // Ferramentas de dev: o controller só existe com DEV_TOOLS_ENABLED=true e confere o token
+                    .requestMatchers(HttpMethod.POST, "/api/dev/test-users").permitAll()
 
                     // Endpoints de infraestrutura e documentação
                     .requestMatchers("/actuator/health", "/v3/api-docs/**", "/swagger-ui/**").permitAll()

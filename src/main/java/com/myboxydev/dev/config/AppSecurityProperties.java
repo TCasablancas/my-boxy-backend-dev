@@ -13,6 +13,13 @@ public class AppSecurityProperties {
   @NotBlank(message = "PGCRYPTO_SECRET_KEY deve ser configurada")
   private String pgcryptoSecretKey;
 
+  @NotBlank(message = "CPF_HASH_PEPPER deve ser configurado")
+  private String cpfHashPepper;
+
+  public void setCpfHashPepper(String cpfHashPepper) {
+    this.cpfHashPepper = cpfHashPepper;
+  }
+
   public void setPgcryptoSecretKey(String pgcryptoSecretKey) {
     this.pgcryptoSecretKey = pgcryptoSecretKey;
   }

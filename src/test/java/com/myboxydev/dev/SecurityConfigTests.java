@@ -77,4 +77,20 @@ class SecurityConfigTests {
                     .content("{}"))
             .andExpect(status().isBadRequest());
   }
+
+  @Test
+  void devToolsRouteDoesNotExistByDefault() throws Exception {
+    mockMvc.perform(post("/api/dev/test-users")
+                    .contentType("application/json")
+                    .content("{}"))
+            .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void deprecatedRegisterWasRemoved() throws Exception {
+    mockMvc.perform(post("/api/auth/register")
+                    .contentType("application/json")
+                    .content("{}"))
+            .andExpect(status().isNotFound());
+  }
 }

@@ -89,6 +89,10 @@ app:
       secret-key: ${STRIPE_SECRET_KEY:}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+  # POST /api/dev/test-users. Desligado por padrão; só ligar local/dev, nunca em produção
+  dev-tools:
+    enabled: ${DEV_TOOLS_ENABLED:false}
+    token: ${DEV_TOOLS_TOKEN:}
   supabase:
     auth-url: ${SUPABASE_JWT_ISSUER_URI:https://uzgpndjyjfmwzteygbjb.supabase.co/auth/v1}
     anon-key: ${SUPABASE_ANON_KEY:}
@@ -97,4 +101,6 @@ app:
   security:
     # Sem valor padrão: sem a variável o boot falha, em vez de cifrar CPF com chave pública
     pgcrypto-secret-key: ${PGCRYPTO_SECRET_KEY:}
+    # Segredo do HMAC do CPF (cpf_hash). Diferente da chave do pgcrypto; sem ele o boot falha
+    cpf-hash-pepper: ${CPF_HASH_PEPPER:}
     jwt-secret: ${SUPABASE_JWT_SECRET:}

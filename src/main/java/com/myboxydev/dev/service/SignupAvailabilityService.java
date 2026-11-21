@@ -1,5 +1,6 @@
 package com.myboxydev.dev.service;
 
+import com.myboxydev.dev.config.AppSecurityProperties;
 import com.myboxydev.dev.dto.SignupAvailabilityResponseDTO;
 import com.myboxydev.dev.repository.UserProfileRepository;
 import com.myboxydev.dev.util.CpfUtils;
@@ -25,6 +26,7 @@ public class SignupAvailabilityService {
 
   private final UserProfileRepository userProfileRepository;
   private final UserService userService;
+  private final AppSecurityProperties appSecurityProperties;
 
   @Transactional(readOnly = true)
   public SignupAvailabilityResponseDTO checkAlias(String rawAlias) {
@@ -44,7 +46,7 @@ public class SignupAvailabilityService {
   }
 
   /**
-   * Compara pelo hash SHA-256, como o cadastro grava; o CPF não é logado nem devolvido.
+   * Compara pelo hash (HMAC), como o cadastro grava; o CPF não é logado nem devolvido.
    */
   @Transactional(readOnly = true)
   public SignupAvailabilityResponseDTO checkCpf(String rawCpf) {
@@ -52,7 +54,7 @@ public class SignupAvailabilityService {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O CPF informado é inválido");
     }
 
-    String cpfHash = CpfUtils.calculateSha256Hash(CpfUtils.cleanCpf(rawCpf));
+    String cpfHash = CpfUtils.hashCpf(rawCpf, appSecurityProperties.getCpfHashPepper());
     if (!userProfileRepository.existsByCpfHash(cpfHash)) {
       return new SignupAvailabilityResponseDTO("cpf", null, true, null, null);
     }

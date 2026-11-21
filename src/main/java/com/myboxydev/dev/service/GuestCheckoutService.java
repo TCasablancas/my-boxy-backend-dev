@@ -1,6 +1,11 @@
 package com.myboxydev.dev.service;
 
+import com.myboxydev.dev.config.AppSecurityProperties;
 import com.myboxydev.dev.dto.ExpressGuestCheckoutRequestDTO;
+import com.myboxydev.dev.exception.FieldValidationException;
+import com.myboxydev.dev.exception.ResourceNotFoundException;
+import com.myboxydev.dev.repository.UserProfileRepository;
+import com.myboxydev.dev.util.CpfUtils;
 import com.myboxydev.dev.dto.CheckoutResponseDTO;
 import com.myboxydev.dev.model.OrderItemModel;
 import com.myboxydev.dev.model.OrderModel;
@@ -11,10 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.time.Year;
-import java.util.HexFormat;
-import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -24,24 +27,38 @@ public class GuestCheckoutService {
   private final OrderRepository orderRepository;
   private final MelhorEnvioService melhorEnvioService;
   private final StripePaymentService stripePaymentService;
+  private final UserProfileRepository userProfileRepository;
+  private final AppSecurityProperties appSecurityProperties;
+  private static final SecureRandom RANDOM = new SecureRandom();
+  // Sem 0/O e 1/I/L, para o número ser fácil de ditar ao suporte
+  private static final String ORDER_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
   public GuestCheckoutService(
           ProductRepository productRepository,
           OrderRepository orderRepository,
           MelhorEnvioService melhorEnvioService,
-          StripePaymentService stripePaymentService
+          StripePaymentService stripePaymentService,
+          UserProfileRepository userProfileRepository,
+          AppSecurityProperties appSecurityProperties
   ) {
     this.productRepository = productRepository;
     this.orderRepository = orderRepository;
     this.melhorEnvioService = melhorEnvioService;
     this.stripePaymentService = stripePaymentService;
+    this.userProfileRepository = userProfileRepository;
+    this.appSecurityProperties = appSecurityProperties;
   }
 
   @Transactional
   public CheckoutResponseDTO executeGuestCheckout(ExpressGuestCheckoutRequestDTO request) {
+    if (!CpfUtils.isValidCpf(request.cpf())) {
+      throw new FieldValidationException("cpf", "O CPF informado é inválido");
+    }
+    String cleanCpf = CpfUtils.cleanCpf(request.cpf());
+
     // 1. Busca produto
     ProductModel product = productRepository.findById(request.productId())
-            .orElseThrow(() -> new RuntimeException("Produto não encontrado"));
+            .orElseThrow(() -> new ResourceNotFoundException("Produto não encontrado"));
 
     // 2. Calcula frete
     BigDecimal shippingCost = melhorEnvioService.calculateShippingCost(
@@ -61,8 +78,9 @@ public class GuestCheckoutService {
     order.setGuestEmail(request.email());
     order.setGuestFullName(request.fullName());
 
-    // Hash SHA-256 do CPF para pesquisas
-    order.setGuestCpfHash(calculateSha256(request.cpf().replaceAll("[^0-9]", "")));
+    // CPF cifrado (pgcrypto, mesma chave do perfil) + hash HMAC para pesquisas
+    order.setGuestCpfEncrypted(userProfileRepository.encryptCpf(cleanCpf, appSecurityProperties.getPgcryptoSecretKey()));
+    order.setGuestCpfHash(CpfUtils.hashCpf(cleanCpf, appSecurityProperties.getCpfHashPepper()));
 
     order.setSubtotalAmount(subtotal);
     order.setShippingCost(shippingCost);
@@ -115,18 +133,12 @@ public class GuestCheckoutService {
     );
   }
 
+  /** Ex.: MBX-2026-7KQ2X9PA. 8 caracteres aleatórios: não repete nem dá para adivinhar. */
   private String generateOrderNumber() {
-    int random = new Random().nextInt(9000) + 1000;
-    return "MBX-" + Year.now().getValue() + "-" + random;
-  }
-
-  private String calculateSha256(String input) {
-    try {
-      MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      byte[] hash = digest.digest(input.getBytes());
-      return HexFormat.of().formatHex(hash);
-    } catch (Exception e) {
-      return input;
+    StringBuilder code = new StringBuilder();
+    for (int i = 0; i < 8; i++) {
+      code.append(ORDER_ALPHABET.charAt(RANDOM.nextInt(ORDER_ALPHABET.length())));
     }
+    return "MBX-" + Year.now().getValue() + "-" + code;
   }
 }

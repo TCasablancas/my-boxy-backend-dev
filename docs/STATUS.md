@@ -1,6 +1,6 @@
 # Status do projeto
 
-Última atualização: 2026-11-20 (galeria de mídias do produto).
+Última atualização: 2026-11-21 (usuários de teste + correções de segurança).
 Agentes: atualizem este arquivo ao terminar uma tarefa.
 
 ## Feito
@@ -14,7 +14,7 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
   - Reenvio do link de confirmação: `POST /api/auth/signup/resend-confirmation` `{email}` → sempre 202 (não revela se a conta existe), 429 com `Retry-After` quando o Supabase limita.
   - Login: e-mail não confirmado → 403 (não mais 401); conta do Auth sem perfil → 409 `email` pedindo para refazer o cadastro (antes tentava criar perfil sem CPF e dava 500); 429 repassado.
   - Erros mapeados: 400 (campos em snake_case, sempre com `fieldErrors`, inclusive CPF, alias, telefone, senha fraca e e-mail recusado pelo Supabase), 409 só para conflito real (e-mail/alias/CPF em uso, com o campo em `fieldErrors`), 429 (rate limit do Supabase, sempre com `Retry-After`: o do Supabase, o "after N seconds" da mensagem ou 600 s para e-mail / 60 s para requisições; header exposto no CORS), 500 (falha ao gravar o perfil que não é conflito), 502/503 (falha do provedor).
-  - `POST /api/auth/register` está **deprecated** (substituído por `/signup`).
+  - `POST /api/auth/register` (deprecated) foi **removido** em 2026-11-21: criava usuário no Auth e falhava no perfil sem CPF.
 - **Avaliações de produto (ADR-0003, branch `feat/product-reviews`):** `GET /api/v1/products/{productId}/reviews/summary` (média, total e 5 barras de 5 a 1) e `GET /api/v1/products/{productId}/reviews?ratings=5,4&cursor=&limit=` (lista infinita por cursor `created_at`+`id`, mais recentes primeiro; 400 com `fieldErrors` para `ratings`/`cursor`/`limit`; 404 sem produto). Públicas, `max-age=60`. Autor sai como "Ana S." (anonimizado: "Usuário MyBoxy"), sem id/e-mail. `ReviewService` já atende loja (`ReviewTarget.STORE`), falta só o controller.
   - Tabelas `reviews`, `review_photos`, `review_likes`: migration `supabase/migrations/20261118120000_reviews.sql` (**aplicar à mão** antes do deploy, senão as rotas respondem 500; testada num Postgres 16 local).
   - Fase 2: criar/editar avaliação, curtir, upload de fotos (bucket `review-photos`), curtidas do usuário logado, rotas da loja. `products.reviews` e `stores.rating` ainda não são derivados de `reviews`.
@@ -26,6 +26,12 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
 - **Frete:** `POST /api/shipping/calculate` (Melhor Envio).
 - **Checkout de visitante:** `POST /api/checkout/express-guest` (Stripe + Melhor Envio).
 - **Segurança:** JWT do Supabase validado pelo `issuer-uri`, CORS por variável, chaves do Supabase validadas no boot.
+- **Usuários de teste e segurança (ADR-0005, branch `fix/test-users-and-security`):**
+  - `POST /api/dev/test-users` (só com `DEV_TOOLS_ENABLED=true` + header `X-Dev-Tools-Token`): cria usuário confirmado pela API admin do Auth (sem e-mail) + perfil com CPF cifrado; campos opcionais, CPF válido gerado se faltar.
+  - `cpf_hash` agora é HMAC-SHA256 com `CPF_HASH_PEPPER` (antes SHA-256 puro). Antes do deploy: criar a variável no Railway e rodar o SQL de recálculo dos hashes.
+  - Limite por IP (`RateLimitFilter`) em login, refresh, signup, checagens de alias/CPF, reenvio de confirmação, frete, checkout de visitante e dev tools: `429` + `Retry-After`.
+  - Checkout de visitante: valida CPF, grava `guest_cpf_encrypted`, hash HMAC, `quantity` obrigatória (1–99), produto inexistente = 404, número do pedido com 8 caracteres aleatórios.
+  - `@CrossOrigin("*")` removido dos controllers: vale só o CORS de `CORS_ALLOWED_ORIGINS`.
 - **Testes:** 10 classes (signup, disponibilidade, cliente Supabase Auth, propriedades, segurança, mapeamento de entidades, contexto, contrato OpenAPI). `./mvnw -B test` em 2026-11-20: 104 testes, 0 falhas. `EntityMappingTests` confere que as colunas NOT NULL de `user_profiles` no Supabase também são obrigatórias na entidade (o H2 dos testes nasce da entidade).
 - **Contrato OpenAPI:** `/v3/api-docs` funciona (springdoc 2.7.0 com Boot 4.1.1), lista os 22 paths e respeita os nomes snake_case; coberto por `OpenApiDocsTests`.
 - **Deploy:** Railway via `Dockerfile` (branch `main`).
@@ -42,7 +48,6 @@ Agentes: atualizem este arquivo ao terminar uma tarefa.
 
 ## Pontos de atenção (encontrados no levantamento, ainda não corrigidos)
 - Corrigido em `fix/address-set-primary-jwt`: `PUT /api/v1/me/addresses/{id}/set-primary` lia o usuário do header `X-User-Id`; agora usa o JWT e responde 404 para endereço de outro usuário.
-- `AuthService.login` cria um perfil padrão sem CPF quando o usuário do Auth não tem perfil; com `cpf_encrypted`/`cpf_hash` NOT NULL esse insert falha. O mesmo vale para o `register` (deprecated).
 - Dev e prod usam o mesmo projeto Supabase: testes de cadastro gastam a cota de e-mail de usuários reais.
 - `PGCRYPTO_SECRET_KEY` e `SUPABASE_JWT_SECRET` não têm mais valor padrão no `application.yaml`: sem a variável o boot falha. Conferir no Railway antes do deploy (trocar a chave invalida os CPFs já cifrados).
 - Logs do cliente do Supabase Auth mascaram e-mails do corpo da resposta (`SupabaseAuthClient.maskEmails`).

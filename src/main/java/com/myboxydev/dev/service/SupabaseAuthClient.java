@@ -76,6 +76,31 @@ public class SupabaseAuthClient {
   }
 
   /**
+   * Cria o usuário pela API admin (service role) já com o e-mail confirmado:
+   * não envia e-mail nem gasta a cota. Só as ferramentas de dev usam.
+   */
+  public UUID adminCreateConfirmedUser(String email, String password, Map<String, Object> userMetadata) {
+    Map<String, Object> body = new HashMap<>();
+    body.put("email", email);
+    body.put("password", password);
+    body.put("email_confirm", true);
+    body.put("user_metadata", userMetadata);
+    try {
+      ResponseEntity<Map> response = restTemplate.postForEntity(
+              supabaseProperties.getAuthUrl() + "/admin/users",
+              new HttpEntity<>(body, headers(supabaseProperties.getServiceRoleKey())),
+              Map.class
+      );
+      return parseCreatedUserId(response.getBody());
+    } catch (RestClientResponseException exception) {
+      throw translateSignUpError(exception);
+    } catch (RestClientException exception) {
+      log.error("Supabase /admin/users inacessível: {}", exception.getClass().getSimpleName());
+      throw new AuthUnavailableException();
+    }
+  }
+
+  /**
    * Reenvia o e-mail de confirmação do cadastro. Só o 429 e a falha de rede
    * chegam ao app: qualquer outra recusa (e-mail inexistente ou já confirmado)
    * é só logada, para a rota não revelar quais e-mails têm conta.

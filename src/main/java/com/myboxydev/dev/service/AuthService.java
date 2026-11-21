@@ -4,15 +4,12 @@ import com.myboxydev.dev.config.SupabaseProperties;
 import com.myboxydev.dev.dto.AuthResponseDTO;
 import com.myboxydev.dev.dto.LoginRequestDTO;
 import com.myboxydev.dev.dto.RefreshTokenRequestDTO;
-import com.myboxydev.dev.dto.RegisterRequestDTO;
 import com.myboxydev.dev.dto.SetPasswordRequestDTO;
 import com.myboxydev.dev.domain.entity.UserProfileEntity;
 import com.myboxydev.dev.exception.AuthRateLimitException;
-import com.myboxydev.dev.exception.BusinessRuleException;
 import com.myboxydev.dev.exception.EmailNotConfirmedException;
 import com.myboxydev.dev.exception.FieldConflictException;
 import com.myboxydev.dev.repository.UserProfileRepository;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -25,7 +22,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
-import java.text.Normalizer;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -106,27 +102,6 @@ public class AuthService {
   }
 
   /**
-   * Registra novo usuário no Supabase Auth e cria o perfil correspondente
-   */
-  @Transactional
-  public AuthResponseDTO register(RegisterRequestDTO request) {
-    String email = normalizeEmail(request.email());
-    if (userProfileRepository.existsByEmailIgnoreCase(email)) {
-      throw new BusinessRuleException("Já existe uma conta associada a este e-mail.");
-    }
-
-    AuthTokens tokens = authenticate("/signup", email, request.password(), "Não foi possível criar conta.");
-    UserProfileEntity profile = createDefaultProfile(tokens.userId(), email, request.fullName());
-    profile.setPhoneNumber(request.phoneNumber());
-    try {
-      profile = userProfileRepository.save(profile);
-    } catch (DataIntegrityViolationException exception) {
-      throw new BusinessRuleException("Já existe uma conta associada a este e-mail.");
-    }
-    return toResponse(tokens, profile);
-  }
-
-  /**
    * Define senha para usuário de Guest Checkout, promovendo-o para conta ativa
    */
   @Transactional
@@ -177,16 +152,6 @@ public class AuthService {
     }
   }
 
-  private UserProfileEntity createDefaultProfile(UUID userId, String email, String name) {
-    return UserProfileEntity.builder()
-            .id(userId)
-            .fullName(name.trim())
-            .alias(generateSuggestedAlias(name))
-            .email(email)
-            .isSeller(false)
-            .build();
-  }
-
   private AuthResponseDTO toResponse(AuthTokens tokens, UserProfileEntity profile) {
     return new AuthResponseDTO(
             tokens.accessToken(),
@@ -197,26 +162,6 @@ public class AuthService {
             profile.getFullName(),
             profile.getIsSeller()
     );
-  }
-
-  private String generateSuggestedAlias(String name) {
-    String base = Normalizer.normalize(name, Normalizer.Form.NFD)
-            .replaceAll("\\p{M}", "")
-            .toLowerCase(Locale.ROOT)
-            .replaceAll("[^a-z0-9]", ".")
-            .replaceAll("\\.+", ".")
-            .replaceAll("^\\.|\\.$", "");
-
-    if (base.length() < 3) base = base + ".user";
-
-    String candidate = base;
-    int counter = 1;
-
-    while (userProfileRepository.existsByAliasIgnoreCase(candidate)) {
-      candidate = base + counter;
-      counter++;
-    }
-    return candidate;
   }
 
   private String normalizeEmail(String email) {

@@ -23,5 +23,9 @@ app:
     service-role-key: test-service-role-key
   security:
     pgcrypto-secret-key: test-pgcrypto-secret-key
+    cpf-hash-pepper: test-cpf-hash-pepper
+  # Desligado nos testes em geral (o contexto é compartilhado); RateLimitFilterTests liga
+  rate-limit:
+    enabled: false
   cors:
     allowed-origins: http://localhost:3000

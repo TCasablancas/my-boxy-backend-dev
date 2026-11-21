@@ -1,5 +1,6 @@
 package com.myboxydev.dev;
 
+import com.myboxydev.dev.config.AppSecurityProperties;
 import com.myboxydev.dev.dto.SignupAvailabilityResponseDTO;
 import com.myboxydev.dev.repository.UserProfileRepository;
 import com.myboxydev.dev.service.SignupAvailabilityService;
@@ -28,7 +29,9 @@ class SignupAvailabilityServiceTests {
   void setUp() {
     userProfileRepository = mock(UserProfileRepository.class);
     userService = mock(UserService.class);
-    service = new SignupAvailabilityService(userProfileRepository, userService);
+    AppSecurityProperties properties = new AppSecurityProperties();
+    properties.setCpfHashPepper("pepper");
+    service = new SignupAvailabilityService(userProfileRepository, userService, properties);
   }
 
   @Test
@@ -64,7 +67,7 @@ class SignupAvailabilityServiceTests {
 
   @Test
   void cpfIsLookedUpByHashAndNeverEchoed() {
-    String hash = CpfUtils.calculateSha256Hash("52998224725");
+    String hash = CpfUtils.hashCpf("52998224725", "pepper");
     when(userProfileRepository.existsByCpfHash(hash)).thenReturn(true);
 
     SignupAvailabilityResponseDTO response = service.checkCpf(VALID_CPF);

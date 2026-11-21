@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/shipping")
-@CrossOrigin(origins = "*")
 public class ShippingController {
 
   private final MelhorEnvioService melhorEnvioService;
