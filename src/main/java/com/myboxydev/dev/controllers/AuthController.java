@@ -3,7 +3,6 @@ package com.myboxydev.dev.controllers;
 import com.myboxydev.dev.dto.AuthResponseDTO;
 import com.myboxydev.dev.dto.LoginRequestDTO;
 import com.myboxydev.dev.dto.RefreshTokenRequestDTO;
-import com.myboxydev.dev.dto.RegisterRequestDTO;
 import com.myboxydev.dev.dto.SetPasswordRequestDTO;
 import com.myboxydev.dev.dto.SignupAliasCheckRequestDTO;
 import com.myboxydev.dev.dto.SignupAvailabilityResponseDTO;
@@ -22,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
   @Autowired
   private AuthService authService;
@@ -80,16 +78,6 @@ public class AuthController {
           @Valid @RequestBody SignupResendConfirmationRequestDTO request) {
     userSignupService.resendConfirmation(request.email());
     return ResponseEntity.accepted().build();
-  }
-
-  /**
-   * @deprecated cadastro sem CPF/endereço; o app usa {@code POST /api/auth/signup}.
-   */
-  @Deprecated
-  @PostMapping("/register")
-  public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
-    AuthResponseDTO response = authService.register(request);
-    return ResponseEntity.ok(response);
   }
 
   @PostMapping("/set-password")

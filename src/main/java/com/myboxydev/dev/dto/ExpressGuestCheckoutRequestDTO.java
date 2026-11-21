@@ -6,10 +6,10 @@ import java.util.UUID;
 
 public record ExpressGuestCheckoutRequestDTO(
         @NotNull UUID productId,
-        @Min(1) Integer quantity,
-        @NotBlank @Email String email,
-        @NotBlank String fullName,
-        @NotBlank String cpf,
+        @NotNull @Min(1) @Max(99) Integer quantity,
+        @NotBlank @Email @Size(max = 255) String email,
+        @NotBlank @Size(max = 150) String fullName,
+        @NotBlank @Size(max = 14) String cpf,
         @NotBlank @Pattern(regexp = "^\\d{5}-?\\d{3}$") String postalCode,
         @NotBlank String street,
         @NotBlank String number,

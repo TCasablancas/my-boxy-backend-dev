@@ -61,12 +61,13 @@ Contrato OpenAPI local: `http://localhost:8080/v3/api-docs` (Swagger UI em `/swa
 ## Banco de dados e schema
 - O schema pertence ao Supabase. `spring.jpa.hibernate.ddl-auto` fica `none` em produção.
 - Ainda não existe processo versionado de migrations. Qualquer mudança de schema precisa de ADR + aprovação humana, e o SQL é aplicado por uma pessoa, não pelo agente.
-- CPF é criptografado com pgcrypto (`PGCRYPTO_SECRET_KEY`) + hash SHA-256. Nunca logar CPF em texto.
+- CPF é criptografado com pgcrypto (`PGCRYPTO_SECRET_KEY`) + hash HMAC-SHA256 com `CPF_HASH_PEPPER` (`CpfUtils.hashCpf`). Nunca logar CPF em texto nem usar SHA-256 puro.
 
 ## Variáveis de ambiente (valores só no Railway / `.env` local)
 `SUPABASE_DB_USERNAME`, `SUPABASE_DB_PASSWORD`, `SUPABASE_JWT_ISSUER_URI`, `SUPABASE_ANON_KEY`,
-`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_EMAIL_REDIRECT_URL`, `PGCRYPTO_SECRET_KEY`, `CORS_ALLOWED_ORIGINS`,
-`STRIPE_SECRET_KEY`, `MELHOR_ENVIO_API_URL`, `MELHOR_ENVIO_TOKEN`, `MELHOR_ENVIO_ORIGIN_POSTAL_CODE`, `JPA_DDL_AUTO`.
+`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_EMAIL_REDIRECT_URL`, `PGCRYPTO_SECRET_KEY`, `CPF_HASH_PEPPER`, `CORS_ALLOWED_ORIGINS`,
+`STRIPE_SECRET_KEY`, `MELHOR_ENVIO_API_URL`, `MELHOR_ENVIO_TOKEN`, `MELHOR_ENVIO_ORIGIN_POSTAL_CODE`, `JPA_DDL_AUTO`,
+`DEV_TOOLS_ENABLED`, `DEV_TOOLS_TOKEN` (só local/dev).
 Variável nova: adicionar em `.env.example` (com valor fictício) e no README.
 
 ## NÃO FAZER
@@ -76,5 +77,6 @@ Variável nova: adicionar em `.env.example` (com valor fictício) e no README.
 - Não expor a `SUPABASE_SERVICE_ROLE_KEY`: ela só existe no servidor, nunca vai em resposta, log, app ou teste com valor real.
 - Não commitar secrets. Valores reais ficam só nas variáveis do Railway; `.env` não é versionado.
 - Não alterar endpoints existentes sem manter compatibilidade com o app (não renomear/remover path, campo ou status). Use campo novo opcional ou nova versão de rota.
-- Não trocar `PGCRYPTO_SECRET_KEY`: CPFs já gravados deixariam de ser decifrados.
+- Não trocar `PGCRYPTO_SECRET_KEY`: CPFs já gravados deixariam de ser decifrados. Trocar `CPF_HASH_PEPPER` exige recalcular todos os `cpf_hash`.
+- Não ligar `DEV_TOOLS_ENABLED` em produção.
 - Não desabilitar testes nem segurança (`permitAll` amplo, CSRF/CORS abertos) para "fazer funcionar".

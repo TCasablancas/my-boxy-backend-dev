@@ -78,7 +78,7 @@ public class UserService {
     }
 
     String cleanCpf = CpfUtils.cleanCpf(rawCpf);
-    String cpfHash = CpfUtils.calculateSha256Hash(cleanCpf);
+    String cpfHash = CpfUtils.hashCpf(cleanCpf, appSecurityProperties.getCpfHashPepper());
 
     userProfileRepository.findByCpfHash(cpfHash).ifPresent(existingUser -> {
       if (!existingUser.getId().equals(userId)) {

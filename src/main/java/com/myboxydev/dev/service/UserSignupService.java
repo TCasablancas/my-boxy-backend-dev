@@ -57,6 +57,23 @@ public class UserSignupService {
   private final TransactionTemplate transactionTemplate;
 
   public UserSignupResponseDTO signup(UserSignupRequestDTO request) {
+    SignupData data = validate(request);
+    UUID userId = createAuthUser(data.email(), request.password(), data.fullName(), data.alias());
+    return persistOrCompensate(userId, request, data);
+  }
+
+  /**
+   * Só para ferramentas de dev: mesmo cadastro do {@link #signup}, mas o usuário
+   * é criado pela API admin do Auth já confirmado (sem e-mail, sem gastar cota).
+   */
+  public UserSignupResponseDTO signupConfirmedTestUser(UserSignupRequestDTO request) {
+    SignupData data = validate(request);
+    UUID userId = supabaseAuthClient.adminCreateConfirmedUser(data.email(), request.password(),
+            Map.of("full_name", data.fullName(), "alias", data.alias(), "test_user", true));
+    return persistOrCompensate(userId, request, data);
+  }
+
+  private SignupData validate(UserSignupRequestDTO request) {
     String email = request.email().trim().toLowerCase(Locale.ROOT);
     String fullName = request.fullName().trim();
     String alias = normalizeAlias(request.alias());
@@ -66,7 +83,7 @@ public class UserSignupService {
       throw new FieldValidationException("cpf", "O CPF informado é inválido");
     }
     String cleanCpf = CpfUtils.cleanCpf(request.cpf());
-    String cpfHash = CpfUtils.calculateSha256Hash(cleanCpf);
+    String cpfHash = CpfUtils.hashCpf(cleanCpf, appSecurityProperties.getCpfHashPepper());
 
     // Validações antecipadas evitam criar usuário no Auth para depois desfazer
     if (userProfileRepository.existsByEmailIgnoreCase(email)) {
@@ -79,22 +96,26 @@ public class UserSignupService {
     if (userProfileRepository.existsByCpfHash(cpfHash)) {
       throw new CpfAlreadyExistsException();
     }
+    return new SignupData(email, fullName, alias, phoneNumber, cleanCpf, cpfHash);
+  }
 
-    UUID userId = createAuthUser(email, request.password(), fullName, alias);
-
+  private UserSignupResponseDTO persistOrCompensate(UUID userId, UserSignupRequestDTO request, SignupData data) {
     try {
-      UserProfileEntity profile = transactionTemplate.execute(status ->
-              persistProfile(userId, request, email, fullName, alias, phoneNumber, cleanCpf, cpfHash));
+      UserProfileEntity profile = transactionTemplate.execute(status -> persistProfile(userId, request,
+              data.email(), data.fullName(), data.alias(), data.phoneNumber(), data.cleanCpf(), data.cpfHash()));
       return toResponse(profile);
     } catch (RuntimeException exception) {
       if (compensate(userId)) {
         // Envio duplicado do mesmo cadastro (toque duplo, retry): a conta já está pronta
-        log.warn("Cadastro recusado (409) [envio duplicado] email={} authUserId={}", maskEmail(email), userId);
+        log.warn("Cadastro recusado (409) [envio duplicado] email={} authUserId={}", maskEmail(data.email()), userId);
         throw new EmailAlreadyInAuthException(REASON_DUPLICATE_SUBMIT);
       }
       throw translatePersistenceFailure(exception, userId);
     }
   }
+
+  private record SignupData(String email, String fullName, String alias, String phoneNumber,
+                            String cleanCpf, String cpfHash) {}
 
   /**
    * Reenvia o link de confirmação. A resposta é a mesma exista ou não a conta.

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/checkout/express-guest")
-@CrossOrigin(origins = "*")
 public class GuestCheckoutController {
   private final GuestCheckoutService guestCheckoutService;
   public GuestCheckoutController(GuestCheckoutService guestCheckoutService) {
