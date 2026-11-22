@@ -68,7 +68,8 @@ public class ProductController {
                       product.getSubcategory().getId(),
                       product.getSubcategory().getName(),
                       product.getSubcategory().getSlug(),
-                      product.getSubcategory().getCategory().getId()
+                      product.getSubcategory().getCategory().getId(),
+                      product.getSubcategory().getCategory().getName()
               );
 
               ProductDTO detailDTO = new ProductDTO(

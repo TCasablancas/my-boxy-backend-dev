@@ -51,6 +51,8 @@ public class CategoryController {
     }
 
     private SubcategoryDTO toSubcategoryDTO(SubcategoryModel sub) {
-        return new SubcategoryDTO(sub.getId(), sub.getName(), sub.getSlug(), sub.getCategory().getId());
+        return new SubcategoryDTO(
+                sub.getId(), sub.getName(), sub.getSlug(),
+                sub.getCategory().getId(), sub.getCategory().getName());
     }
 }
