@@ -2,8 +2,10 @@ package com.myboxydev.dev;
 
 import com.myboxydev.dev.domain.entity.ProductMediaEntity;
 import com.myboxydev.dev.domain.enums.ProductMediaType;
+import com.myboxydev.dev.model.CategoryModel;
 import com.myboxydev.dev.model.ProductModel;
 import com.myboxydev.dev.model.StoreModel;
+import com.myboxydev.dev.model.SubcategoryModel;
 import com.myboxydev.dev.repository.ProductMediaRepository;
 import com.myboxydev.dev.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
@@ -82,6 +84,26 @@ class ProductControllerTests {
     mockMvc.perform(get("/api/products/{id}/related", productId))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].isCustom").value(true));
+  }
+
+  @Test
+  void detailReturnsSubcategoryWithCategoryName() throws Exception {
+    CategoryModel category = new CategoryModel();
+    category.setId(UUID.randomUUID());
+    category.setName("Decoração");
+    SubcategoryModel subcategory = new SubcategoryModel();
+    subcategory.setId(UUID.randomUUID());
+    subcategory.setName("Vasos");
+    subcategory.setCategory(category);
+    ProductModel withCategory = product();
+    withCategory.setSubcategory(subcategory);
+    when(productRepository.findById(productId)).thenReturn(Optional.of(withCategory));
+
+    mockMvc.perform(get("/api/products/{id}", productId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.subcategory.name").value("Vasos"))
+            .andExpect(jsonPath("$.subcategory.categoryId").value(category.getId().toString()))
+            .andExpect(jsonPath("$.subcategory.categoryName").value("Decoração"));
   }
 
   @Test
