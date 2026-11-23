@@ -15,6 +15,18 @@ public interface ProductRepository extends JpaRepository<ProductModel, UUID>, Jp
     List<ProductModel> findByStoreIdAndIdNot(UUID storeId, UUID productId);
     List<ProductModel> findByNameContainingIgnoreCase(String name);
 
+    // "Parecidos": sorteio de produtos da mesma subcategoria, sem o atual.
+    // O sorteio e o limite ficam no banco para não carregar a subcategoria inteira.
+    @Query(value = """
+            SELECT * FROM products
+            WHERE subcategory_id = :subcategoryId AND id <> :productId
+            ORDER BY random()
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<ProductModel> findRandomBySubcategory(@Param("subcategoryId") UUID subcategoryId,
+                                               @Param("productId") UUID productId,
+                                               @Param("limit") int limit);
+
     // Favoritos por usuário (tabela product_favorites). Insert/delete idempotentes.
     @Modifying
     @Query(value = """

@@ -101,6 +101,30 @@ public class ProductController {
             .orElse(ResponseEntity.notFound().build());
   }
 
+  static final int SIMILAR_MAX_LIMIT = 20;
+
+  // Carrossel "Parecidos": produtos aleatórios da mesma subcategoria, sem o atual.
+  // Produto sem subcategoria não tem parecidos (lista vazia).
+  @GetMapping("/{id}/similar")
+  public ResponseEntity<List<ProductCardDTO>> getSimilarProducts(
+          @PathVariable UUID id,
+          @RequestParam(defaultValue = "6") int limit
+  ) {
+    int safeLimit = Math.clamp(limit, 1, SIMILAR_MAX_LIMIT);
+    return productRepository.findById(id)
+            .map(product -> {
+              if (product.getSubcategory() == null) {
+                return ResponseEntity.ok(List.<ProductCardDTO>of());
+              }
+              List<ProductCardDTO> similar = productRepository
+                      .findRandomBySubcategory(product.getSubcategory().getId(), id, safeLimit).stream()
+                      .map(this::toCardDTO)
+                      .collect(Collectors.toList());
+              return ResponseEntity.ok(similar);
+            })
+            .orElse(ResponseEntity.notFound().build());
+  }
+
   // Carrossel de Itens Relacionados (mesma loja, excluindo o produto atual)
   // Antes esperava um "lojaId" que nunca vinha na URL — agora deriva do próprio produto.
   @GetMapping("/{id}/related")
