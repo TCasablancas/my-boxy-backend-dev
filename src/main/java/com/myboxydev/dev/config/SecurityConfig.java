@@ -126,6 +126,8 @@ public class SecurityConfig {
           // Avaliações (ADR-0003): só leitura é pública
           "/api/v1/products/*/reviews",
           "/api/v1/products/*/reviews/summary",
+          // Perguntas do produto: ler é público, perguntar exige token (/api/v1/me/**)
+          "/api/v1/products/*/questions",
           "/api/user_profiles/users/check-alias",
   };
 
